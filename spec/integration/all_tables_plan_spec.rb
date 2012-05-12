@@ -1,0 +1,25 @@
+require 'integration_helper'
+
+require 'sq/dbsync/all_tables_plan'
+require 'sq/dbsync/database/connection'
+
+describe SQD::AllTablesPlan do
+  let(:source) { test_source(:source) }
+
+  it 'does not return tables with no PK' do
+    source.create_table :test_table do
+      Integer :col1
+      DateTime :updated_at
+    end
+
+    SQD::AllTablesPlan.new.tables(source).should == []
+  end
+
+  it 'does not return tables with no timestamps' do
+    source.create_table :test_table do
+      primary_key :id
+    end
+
+    SQD::AllTablesPlan.new.tables(source).should == []
+  end
+end
