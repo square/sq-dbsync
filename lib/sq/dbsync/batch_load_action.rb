@@ -9,6 +9,8 @@ module Sq::Dbsync
     def operation; 'batch'; end
 
     def prepare
+      return false if plan.batch_load == false
+
       if super
         if target.table_exists?(plan.prefixed_table_name)
           target.drop_table(plan.prefixed_table_name)
@@ -51,7 +53,7 @@ module Sq::Dbsync
       source = plan.source_db
       source_columns = source.hash_schema(plan.table_name).keys
 
-      plan.columns = source_columns & plan.columns
+      plan.columns = resolve_columns(plan, source_columns)
     end
 
     def prefix
@@ -60,7 +62,7 @@ module Sq::Dbsync
 
     def catchup
       file, @last_row_at = measure(:catchup_extract) {
-        extract_to_file(@last_row_at - overlap)
+        extract_to_file((@last_row_at || EPOCH) - overlap)
       }
       measure(:catchup_load) do
         db.load_incrementally_from_file(

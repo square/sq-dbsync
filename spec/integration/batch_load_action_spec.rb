@@ -40,6 +40,22 @@ describe SQD::BatchLoadAction do
       )
     end
 
+    describe ':all columns options' do
+      let(:table_plan) {{
+        table_name: :test_table,
+        source_table_name: :test_table,
+        columns: :all,
+        source_db: source,
+      }}
+
+      it 'copies all columns to target' do
+        action.call
+
+        target.hash_schema(:test_table).keys.should ==
+          source.hash_schema(:test_table).keys
+      end
+    end
+
     it 'copies source tables to target with matching schemas' do
       start_time = now.to_f
 

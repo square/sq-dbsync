@@ -19,7 +19,7 @@ module Sq::Dbsync
   # This is an abstract base class, see `BatchLoadAction` and
   # `IncrementalLoadAction` for example subclasses.
   class LoadAction
-    EPOCH   = Date.new(2000, 1, 1).to_time
+    EPOCH = Date.new(2000, 1, 1).to_time
 
     # An empty action that is used when a load needs to be noop'ed in a manner
     # that does not raise an error (i.e. expected conditions).
@@ -78,6 +78,14 @@ module Sq::Dbsync
     def add_schema_to_table_plan(x)
       x.schema ||= x.source_db.hash_schema(x.table_name)
       x
+    end
+
+    def resolve_columns(plan, source_columns)
+      if plan.columns == :all
+        source_columns
+      else
+        source_columns & plan.columns
+      end
     end
 
     def extract_to_file(since)
