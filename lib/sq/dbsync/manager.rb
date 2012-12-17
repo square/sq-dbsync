@@ -22,6 +22,15 @@ class Sq::Dbsync::Manager
     @plans  = plans
   end
 
+  def batch(tables = :all)
+    batch_nonactive(tables)
+    refresh_recent(tables)
+  end
+
+  def increment
+    incremental
+  end
+
   def batch_nonactive(tables = :all)
     registry.ensure_storage_exists
 
@@ -42,12 +51,12 @@ class Sq::Dbsync::Manager
     end
   end
 
-  def increment_active
+  def incremental
     @running = true
     counter = 0
 
     loop_with_retry_on(->{ @running }, transient_exceptions) do
-      increment_active_once
+      incremental_once
 
       counter = (counter + 1) % 100
       if counter == 1
@@ -59,7 +68,7 @@ class Sq::Dbsync::Manager
     end
   end
 
-  def increment_active_once
+  def incremental_once
     raise_if_pipeline_failure(
       # ThreadedContext would be ideal here, but it leaks memory in JRuby. Not
       # sure why yet, but mass creation of threads seems like an obvious

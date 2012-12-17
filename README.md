@@ -87,14 +87,13 @@ manager = Manager.new(config, plans)
 # refresh.
 
 # Run a batch load nightly
-manager.batch_nonactive(ALL_TABLES)
-manager.refresh_recent(ALL_TABLES)
+manager.batch(ALL_TABLES)
 
 # Run an incremental load continuously
-manager.increment_nonactive
+manager.increment
 
 # You can load a subset of tables if necessary
-manager.batch_nonactive([:users])
+manager.batch([:users])
 ```
 
 Documentation

@@ -69,7 +69,7 @@ describe SQD::Manager do
     manager.increment_checkpoint
     registry.get(:test_table).should_not be
 
-    # Dropping tables is delayed until the batch load, no rush.
+    # Dropping tables must be done manually
     target.table_exists?(:test_table).should be
   end
 

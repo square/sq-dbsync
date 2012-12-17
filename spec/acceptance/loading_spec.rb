@@ -149,7 +149,7 @@ describe 'Syncing source databases to a target' do
     before do
       manager.batch_nonactive
       @worker = background do
-        manager.increment_active
+        manager.incremental
       end
     end
 
@@ -174,7 +174,7 @@ describe 'Syncing source databases to a target' do
 
     it 'does not continually retry consistent failures' do
       manager.
-        stub!(:increment_active_once).
+        stub!(:incremental_once).
         and_raise(SQD::Database::ExtractError.new)
 
       ->{
