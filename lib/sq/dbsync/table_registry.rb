@@ -44,9 +44,11 @@ module Sq::Dbsync
     end
 
     def purge_except(keys)
-      table.
-        where('table_name NOT IN ?', keys.map(&:to_s)).
-        delete
+      query = table
+      if keys.any?
+        query = query.where('table_name NOT IN ?', keys.map(&:to_s))
+      end
+      query.delete
     end
 
     def ensure_storage_exists
