@@ -23,7 +23,6 @@ module Sq::Dbsync::Loggers
     def initialize(out = $stdout)
       @mutex   = Mutex.new
       @out     = out
-      @threads = {}
     end
 
     def measure(label, &block)
@@ -48,7 +47,6 @@ module Sq::Dbsync::Loggers
 
     def log_measurement(time, event, duration, object)
       log([
-        current_thread_name,
         event,
         "%.3f" % duration,
         object
@@ -62,18 +60,7 @@ module Sq::Dbsync::Loggers
 
     private
 
-    # TODO: Remove old threads from cache
-    def current_thread_name
-      unless threads[Thread.current]
-        mutex.synchronize {
-          threads[Thread.current] = "THREAD%i" % (threads.size + 1)
-        }
-      end
-
-      threads[Thread.current]
-    end
-
-    attr_reader :threads, :mutex, :out
+    attr_reader :mutex, :out
   end
 
   # Combines multiple loggers together.
