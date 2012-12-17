@@ -19,6 +19,8 @@ class Sq::Dbsync::Manager
 
   # A null object to use instead of passing an array of tables to load.
   # Indicates that all tables should be loaded.
+  #
+  # TODO: Replace with symbol :all
   ALL_TABLES = Object.new
 
   def initialize(config, plans)
