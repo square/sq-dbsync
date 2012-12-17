@@ -21,26 +21,34 @@ module Sq::Dbsync::Loggers
   # writing their output.
   class Stream < Abstract
     def initialize(out = $stdout)
-      @mutex = Mutex.new
-      @out   = out
+      @mutex   = Mutex.new
+      @out     = out
+      @threads = {}
     end
 
     def measure(label, &block)
       start_time = Time.now.utc
       log_measurement(start_time, :starting, 0, label)
-      state = :failed
+      ret = nil
+      exception = nil
+      state = :finished
       begin
         ret = block.call
-        state = :finished
-        ret
+      rescue => e
+        state = :failed
+        exception = e
+        raise
       ensure
         end_time = Time.now.utc
         log_measurement(end_time, state, end_time - start_time, label)
+        log(exception.message) if exception
       end
+      ret
     end
 
     def log_measurement(time, event, duration, object)
       log([
+        current_thread_name,
         event,
         "%.3f" % duration,
         object
@@ -49,8 +57,23 @@ module Sq::Dbsync::Loggers
 
     def log(str, time = Time.now.utc)
       # Synchronize to ensure lines are not interwoven.
-      @mutex.synchronize { @out.puts([time, str].join("\t")) }
+      mutex.synchronize { out.puts([time, str].join("\t")) }
     end
+
+    private
+
+    # TODO: Remove old threads from cache
+    def current_thread_name
+      unless threads[Thread.current]
+        mutex.synchronize {
+          threads[Thread.current] = "THREAD%i" % (threads.size + 1)
+        }
+      end
+
+      threads[Thread.current]
+    end
+
+    attr_reader :threads, :mutex, :out
   end
 
   # Combines multiple loggers together.
