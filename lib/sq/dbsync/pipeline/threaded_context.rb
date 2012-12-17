@@ -1,7 +1,5 @@
 require 'thread'
 
-require 'sq/dbsync/pipeline/atomic_integer'
-
 # See lib/sq/dbsync/pipeline.rb
 class Sq::Dbsync::Pipeline
 
@@ -11,6 +9,10 @@ class Sq::Dbsync::Pipeline
   # once, and stage two may also have a maximum of two, but it is optimum
   # that a total of four tasks to be processing at any one time.
   class ThreadedContext
+
+    # Tracer object to mark the end of a stream of tasks.
+    FINISH = Object.new
+
     def self.call(*args, &block)
       new(*args, &block).run
     end
@@ -19,6 +21,7 @@ class Sq::Dbsync::Pipeline
       self.tasks   = tasks
       self.stages  = stages
       self.process = process
+      self.threads = []
     end
 
     def run
@@ -28,12 +31,21 @@ class Sq::Dbsync::Pipeline
         initial_queue << [i, task]
       end
 
-      ordered (0...tasks.length).map { final_queue.pop }
+      result = ordered (0...tasks.length).map { final_queue.pop }
+      flush_threads(initial_queue)
+      result
     end
 
   protected
 
     attr_accessor :tasks, :stages, :process
+
+    # Floods the queue with enough FINISH markers to guarantee that each thread
+    # will see one and shut itself down.
+    def flush_threads(initial_queue)
+      threads.size.times { initial_queue << FINISH }
+      threads.each(&:join)
+    end
 
     def ordered(tasks)
       tasks.
@@ -55,14 +67,17 @@ class Sq::Dbsync::Pipeline
     end
 
     def spawn_workers(stage, task_queue, number_of_tasks)
-      processed  = AtomicInteger.new(0)
       next_queue = Queue.new
 
-      in_threads(concurrency(stage)) do
-        while processed.to_i < number_of_tasks
+      self.threads += in_threads(concurrency(stage)) do
+        while true
           index, task = task_queue.pop
-          next_queue << [index, process.call(stage, task)]
-          processed.inc
+          if index == FINISH
+            next_queue << FINISH
+            break
+          else
+            next_queue << [index, process.call(stage, task)]
+          end
         end
       end
 
@@ -70,9 +85,11 @@ class Sq::Dbsync::Pipeline
     end
 
     def in_threads(n, &block)
-      n.times do
+      n.times.map do
         Thread.new(&block)
       end
     end
+
+    attr_accessor :threads
   end
 end
