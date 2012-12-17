@@ -37,6 +37,10 @@ module Sq::Dbsync
       @now      = now
     end
 
+    def tag
+      plan.table_name
+    end
+
     def call
       self.class.stages.inject(self) {|x, v| v.call(x) }
     end
@@ -62,8 +66,10 @@ module Sq::Dbsync
     attr_reader :target, :plan, :registry, :logger, :now
 
     def prepare
-      registry.ensure_storage_exists
-      return false unless plan.source_db.table_exists?(plan.table_name)
+      unless plan.source_db.table_exists?(plan.source_table_name)
+        logger.log("%s does not exist" % plan.source_table_name)
+        return false
+      end
       add_schema_to_table_plan(plan)
       plan.prefixed_table_name = (prefix + plan.table_name.to_s).to_sym
       filter_columns
@@ -90,9 +96,10 @@ module Sq::Dbsync
 
     def extract_to_file(since)
       plan.source_db.ensure_connection
+      plan.source_db.set_lock_timeout(10)
 
       last_row_at = plan.source_db[plan.table_name].
-        max(([:updated_at, :created_at] & plan.columns)[0])
+        max(([:updated_at, :created_at, :imported_at] & plan.columns)[0])
 
       file = make_writeable_tempfile
 
@@ -105,6 +112,18 @@ module Sq::Dbsync
       )
 
       [file, last_row_at]
+    end
+
+    # This functionality is provided as a work around for the postgres query
+    # planner failing to use indexes correctly for MAX() on a view that uses
+    # UNION under the covers.
+    #
+    # It is most useful under the assumption that one of the tables being
+    # unioned will always contain the most recent record (true in all current
+    # cases). If this is not true, you must provide a custom view that supports
+    # this query with a sane plan.
+    def timestamp_table(plan)
+      plan.source_db[plan.timestamp_table_name || plan.source_table_name]
     end
 
     def db; target; end
@@ -122,14 +141,15 @@ module Sq::Dbsync
       self.class.overlap
     end
 
+    # The distance we look back in time (in seconds) prior to the most recent
+    # row we have seen. This needs to comfortably more that the maximum
+    # expected time for a long running transaction.
     def self.overlap
-      15
+      180
     end
 
     def make_writeable_tempfile
-      x = Tempfile.new(plan.table_name.to_s)
-      x.chmod(0666)
-      x
+      TempfileFactory.make_world_writable(plan.table_name.to_s)
     end
   end
 end
