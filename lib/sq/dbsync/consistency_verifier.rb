@@ -20,6 +20,9 @@ module Sq::Dbsync
     end
 
     def verify_consistency!(tplan)
+      last_row_at = registry.get(tplan[:table_name])[:last_row_at]
+      return unless last_row_at
+
       now = registry.get(tplan[:table_name])[:last_row_at] - LoadAction.overlap
 
       counts = [

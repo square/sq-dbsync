@@ -71,13 +71,14 @@ describe SQD::BatchLoadAction do
 
     it 'handles column that does not exist in source' do
       source.alter_table :test_table do
-        drop_column :id
+        drop_column :col1
       end
 
+      table_plan[:indexes] = {}
       action.call
 
-      target[:test_table].map {|x| x.values_at(:col1)}.
-        should == [['hello']]
+      target[:test_table].map {|x| x.values_at(:id)}.
+        should == [[1]]
     end
 
     it 'handles table that does not exist in source' do
@@ -152,30 +153,23 @@ describe SQD::BatchLoadAction do
             # replicated tables and would be more complicated to support.
             # Primary key status is copied, however.
             hash.delete(:auto_increment)
+            hash.delete(:ruby_default)
             [column, hash]
           end
 
-        extract_common_db_column_info = ->(e) { [
-          e[0],
-          {
-            type:         e[1][:type],
-            primary_key:  e[1][:primary_key],
-            ruby_default: e[1][:ruby_default],
-          }
-        ] }
+        extract_common_db_column_info = ->(e) {
+          [e[0], {
+            type: e[1][:type],
+            primary_key: e[1][:primary_key]
+          }]
+        }
 
-        if source.is_a?(SQD::Database::Postgres)
-          source_test_table_schema = source_test_table_schema.map do |e|
-            # Only look at some of the keys because postgres defines others
-            # differently than mysql.
-            extract_common_db_column_info.call(e)
-          end
+        source_test_table_schema = source_test_table_schema.map do |e|
+          extract_common_db_column_info.call(e)
         end
 
         target.schema(target_table_name).each do |column_arr|
-          if source.is_a?(SQD::Database::Postgres)
-            column_arr = extract_common_db_column_info.call(column_arr)
-          end
+          column_arr = extract_common_db_column_info.call(column_arr)
           source_test_table_schema.should include(column_arr)
         end
         target.indexes(target_table_name).should == index

@@ -1,5 +1,6 @@
 require 'sq/dbsync/batch_load_action'
 require 'sq/dbsync/incremental_load_action'
+require 'sq/dbsync/refresh_recent_load_action'
 require 'sq/dbsync/pipeline'
 require 'sq/dbsync/table_registry'
 require 'sq/dbsync/consistency_verifier'

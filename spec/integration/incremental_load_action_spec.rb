@@ -42,6 +42,23 @@ describe SQD::IncrementalLoadAction do
       setup_target_table(last_synced_at)
     end
 
+    describe ':all columns options' do
+      let(:table_plan) {{
+        table_name: :test_table,
+        source_table_name: :test_table,
+        columns: :all,
+        source_db: source,
+      }}
+
+      it 'copies all columns to target' do
+        action.call
+
+        target[:test_table].map { |row| row.values_at(:id, :col1) }.
+          should == [[2, 'new record']]
+      end
+    end
+
+
     it 'copies null data to the target' do
       source[:test_table].update(col1: nil)
 
