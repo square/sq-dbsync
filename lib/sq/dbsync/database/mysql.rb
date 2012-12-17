@@ -23,13 +23,6 @@ module Sq::Dbsync::Database
 
     def inspect; "#<Database::Mysql #{opts[:database]}>"; end
 
-    def extract_to_file(table_name, columns, file_name)
-      extract_sql_to_file("SELECT %s FROM %s" % [
-        columns.join(', '),
-        table_name
-      ], file_name)
-    end
-
     def load_from_file(table_name, columns, file_name)
       ensure_connection
       db.run "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s (%s)" % [
@@ -39,8 +32,15 @@ module Sq::Dbsync::Database
       ]
     end
 
+    def set_lock_timeout(seconds)
+      db.run lock_timeout_sql(seconds)
+    end
+
     def load_incrementally_from_file(table_name, columns, file_name)
       ensure_connection
+      # Very low lock wait timeout, since we don't want loads to be blocked
+      # waiting for long queries.
+      set_lock_timeout(10)
       db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s (%s)" % [
         file_name,
         table_name,
@@ -55,6 +55,28 @@ module Sq::Dbsync::Database
       else
         raise
       end
+    end
+
+    # 2 days is chosen as an arbitrary buffer
+    AUX_TIME_BUFFER = 60 * 60 * 24 * 2 # 2 days
+
+    # Deletes recent rows based on timestamp, but also allows filtering by an
+    # auxilary timestamp column for the case where the primary one is not
+    # indexed on the target (such as the DFR reports, where imported_at is not
+    # indexed, but reporting date is).
+    def delete_recent(table_name, columns, since, aux_timestamp_column = nil)
+      ensure_connection
+      query = db[table_name].
+        filter("#{timestamp_column(columns)} > ?", since)
+
+      if aux_timestamp_column.is_a?(Symbol)
+        query = query.filter(
+          "#{aux_timestamp_column} > ?",
+          since - AUX_TIME_BUFFER
+        )
+      end
+
+      query.delete
     end
 
     def consistency_check(table_name, t)
@@ -105,13 +127,13 @@ module Sq::Dbsync::Database
     attr_reader :db
 
     def extract_sql_to_file(sql, file_name)
+      file = sql_to_file(connection_settings + sql)
       cmd = "set -o pipefail; mysql --skip-column-names"
       cmd += " -u %s"   % opts[:user]     if opts[:user]
       cmd += " -p%s"    % opts[:password] if opts[:password]
       cmd += " -h %s"   % opts[:host]     if opts[:host]
       cmd += " -P %i"   % opts[:port]     if opts[:port]
       cmd += " %s"      % opts.fetch(:database)
-      cmd += " -e '%s'" % escape_shell(sql)
 
       # This option prevents mysql from buffering results in memory before
       # outputting them, allowing us to stream large tables correctly.
@@ -121,7 +143,19 @@ module Sq::Dbsync::Database
       cmd += " > %s" % file_name
 
       execute!(cmd)
-     end
+    end
+
+    def escape_columns(columns)
+      columns.map {|x| "`#{x}`" }.join(', ')
+    end
+
+    def connection_settings
+      lock_timeout_sql(10)
+    end
+
+    def lock_timeout_sql(seconds)
+      "SET SESSION innodb_lock_wait_timeout = %i;" % seconds
+    end
 
   end
 end

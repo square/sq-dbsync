@@ -3,6 +3,13 @@ require 'tempfile'
 module Sq::Dbsync::Database
   module Common
 
+    def extract_to_file(table_name, columns, file_name)
+      extract_sql_to_file("SELECT %s FROM %s" % [
+        columns.join(', '),
+        table_name
+      ], file_name)
+    end
+
     def extract_incrementally_to_file(table_name,
                                      columns,
                                      file_name,

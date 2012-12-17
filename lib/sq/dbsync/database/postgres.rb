@@ -18,26 +18,15 @@ module Sq::Dbsync::Database
 
     def inspect; "#<Database::Postgres #{opts[:database]}>"; end
 
-
-    def extract_to_file(table_name, columns, file_name)
-      extract_sql_to_file("SELECT %s FROM %s" % [
-        columns.join(', '),
-        table_name
-      ], file_name)
+    def set_lock_timeout(seconds)
+      # Unimplemented
     end
 
     def hash_schema(table_name)
       ensure_connection
 
       result = schema(table_name).each do |col, metadata|
-        if metadata[:db_type] == 'text'
-          # A hack because MySQL can't index text columns
-          metadata[:db_type] = 'varchar(255)'
-        end
-
-        if metadata[:db_type] == 'timestamp without time zone'
-          metadata[:db_type] = 'datetime'
-        end
+        metadata[:db_type] = psql_to_mysql_conversion(metadata[:db_type])
       end
 
       Hash[result]
@@ -46,6 +35,25 @@ module Sq::Dbsync::Database
     protected
 
     attr_reader :db
+
+    def psql_to_mysql_conversion(db_type)
+      {
+        "text" => "varchar(255)",
+        "character varying(255)" => "varchar(255)",
+
+        # 255 is an arbitrary choice here. The one example we have
+        # only has data 32 characters long in it.
+        "character varying"      => "varchar(255)",
+
+        # Arbitrarily chosen precision. The default numeric type in mysql is
+        # (10, 0), which is perhaps the most useless default I could imagine.
+        "numeric" => "numeric(12,6)",
+
+        "time without time zone" => "time",
+        "timestamp without time zone" => "datetime",
+        "boolean" => "char(1)"
+      }.fetch(db_type, db_type)
+    end
 
     def extract_sql_to_file(sql, file_name)
       sql = "COPY (#{sql}) TO STDOUT"
@@ -64,13 +72,6 @@ module Sq::Dbsync::Database
       execute!(cmd)
     ensure
       file.close! if file
-    end
-
-    def sql_to_file(sql)
-      file = Tempfile.new('extract_sql_to_file')
-      file.write(sql)
-      file.flush
-      file
     end
   end
 end
