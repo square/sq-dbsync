@@ -185,10 +185,9 @@ class Sq::Dbsync::Manager
   end
 
   def measure(label, &block)
-    # TODO: Uncomment this
-#     logger.measure("%s.%s" % [Batcave.env, label]) do
+    logger.measure(label) do
       block.call
-#     end
+    end
   end
 
   def registry
