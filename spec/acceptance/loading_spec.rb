@@ -172,17 +172,15 @@ describe 'Syncing source databases to a target' do
       end
     end
 
-    # TODO: Unpending this
-#     it 'does not continually retry consistent failures' do
-#       pending("Hangs, stub doesn't work.")
-#       target.
-#         stub!(:load_incrementally_from_file).
-#         and_raise(SQD::Database::ExtractError.new)
-#
-#       ->{
-#         worker.value
-#       }.should raise_error(SQD::Database::ExtractError)
-#     end
+    it 'does not continually retry consistent failures' do
+      manager.
+        stub!(:increment_active_once).
+        and_raise(SQD::Database::ExtractError.new)
+
+      ->{
+        worker.value
+      }.should raise_error(SQD::Database::ExtractError)
+    end
 
     context 'with an all tables plan' do
       let(:manager) { SQD::Manager.new(config, [[
