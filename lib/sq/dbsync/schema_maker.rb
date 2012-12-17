@@ -11,11 +11,15 @@ module Sq::Dbsync
     def run
       table_plan = @table_plan
 
-      db.create_table!(table_name, engine: 'InnoDB') do
+      db.create_table!(table_name,
+         engine: 'InnoDB',
+         charset: table_plan.charset || 'utf8'
+      ) do
         extend Helpers
 
         add_columns!(table_plan)
         add_indexes!(table_plan)
+        add_primary_key!(table_plan)
       end
     end
 
@@ -52,6 +56,21 @@ module Sq::Dbsync
         end
       end
 
+      def add_primary_key!(table_plan)
+        columns = if table_plan.primary_key
+          table_plan.primary_key
+        else
+          table_plan.schema.select {|col, schema|
+            schema[:primary_key]
+          }.map(&:first)
+        end
+
+        columns = [:id] if columns.empty?
+
+        primary_key(columns)
+      end
+
+
       def add_column(column_name, db_types, schema)
         db_type = db_types[column_name] || [schema[column_name][:db_type]]
 
@@ -59,10 +78,6 @@ module Sq::Dbsync
           { elements: db_type[1] }
         else
           {}
-        end
-
-        if schema[column_name][:primary_key]
-          extra[:primary_key] = true
         end
 
         send db_type[0], column_name, extra
