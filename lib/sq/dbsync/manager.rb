@@ -5,10 +5,10 @@ require 'sq/dbsync/pipeline'
 require 'sq/dbsync/table_registry'
 require 'sq/dbsync/consistency_verifier'
 require 'sq/dbsync/database/connection'
+require 'sq/dbsync/error_handler'
 
 # The manager orchestrates the high level functions of the sync, such as
-# keeping the active database up-to-date, and batch loading into the
-# non-active.
+# keeping the database up-to-date and batch loading.
 #
 # This is the main entry point for the application.
 class Sq::Dbsync::Manager
@@ -18,17 +18,22 @@ class Sq::Dbsync::Manager
   MAX_RETRIES = 10
 
   def initialize(config, plans)
-    @config = config
-    @plans  = plans
+    @config        = config
+    @plans         = plans
+    @error_handler = ErrorHandler.new(config)
   end
 
   def batch(tables = :all)
-    batch_nonactive(tables)
-    refresh_recent(tables)
+    error_handler.wrap do
+      batch_nonactive(tables)
+      refresh_recent(tables)
+    end
   end
 
   def increment
-    incremental
+    error_handler.wrap do
+      incremental
+    end
   end
 
   def batch_nonactive(tables = :all)
