@@ -2,18 +2,11 @@ require 'sq/dbsync/database/connection'
 
 def db_options(opts)
   opts = {
-    user:  'root',
-    host:  'localhost',
-    adapter: 'mysql2',
-    port: opts[:adapter] == 'postgres' ? 5432 : 3306
+    user: 'root',
+    host: 'localhost',
+    brand: 'mysql',
+    port: opts[:brand] == 'postgresql' ? 5432 : 3306
   }.merge(opts)
-
-  opts = opts.merge(
-    type: {
-      'mysql2'   => 'mysql',
-      'postgres' => 'postgresql'
-    }.fetch(opts.fetch(:adapter))
-  )
 
   if RUBY_PLATFORM == 'java'
     opts.merge(
@@ -33,7 +26,9 @@ def db_options(opts)
       end
     )
   else
-    opts
+    {
+      adapter: opts[:brand] == 'postgresql' ? 'postgres' : 'mysql2',
+    }.merge(opts)
   end
 end
 
@@ -42,7 +37,7 @@ TEST_SOURCES = {
   alt_source: db_options(database: 'sq_dbsync_test_source_alt'),
   postgres:   db_options(
     user:     `whoami`.chomp,
-    adapter:  'postgres',
+    brand:    'postgresql',
     host:     'localhost',
     database: 'sq_dbsync_pg_test_source'
   )
@@ -68,7 +63,7 @@ RSpec.configure do |config|
     (TEST_SOURCES.values + [TEST_TARGET]).each do |opts|
       db = opts.fetch(:database)
 
-      case opts.fetch(:type)
+      case opts.fetch(:brand)
       when 'mysql'
         `mysql -u root -e "drop database if exists #{db}"`
         `mysql -u root -e "create database #{db}"`

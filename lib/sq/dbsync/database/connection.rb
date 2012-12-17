@@ -10,7 +10,7 @@ module Sq::Dbsync::Database
   # other than MySQL.
   class Connection
     def self.create(opts)
-      case opts[:type]
+      case opts[:brand]
       when 'mysql'
         Sq::Dbsync::Database::Mysql.new(Sequel.connect(opts))
       when 'postgresql'

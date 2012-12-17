@@ -172,12 +172,13 @@ describe 'Syncing source databases to a target' do
       end
     end
 
+    # TODO: Unpending this
 #     it 'does not continually retry consistent failures' do
 #       pending("Hangs, stub doesn't work.")
 #       target.
 #         stub!(:load_incrementally_from_file).
 #         and_raise(SQD::Database::ExtractError.new)
-# 
+#
 #       ->{
 #         worker.value
 #       }.should raise_error(SQD::Database::ExtractError)
