@@ -10,11 +10,7 @@ module Sq::Dbsync::Database
                                      overlap)
       table_name = table_name.to_sym
       db_columns = db.schema(table_name).map(&:first)
-      timestamp  = if db_columns.include?(:updated_at)
-        :updated_at
-      else
-        :created_at
-      end
+      timestamp = timestamp_column(columns)
 
       query = self[table_name].select(*columns)
       if last_row_at
@@ -27,6 +23,16 @@ module Sq::Dbsync::Database
     def hash_schema(table_name)
       ensure_connection
       Hash[schema(table_name)]
+    end
+
+    def timestamp_column(columns)
+      if columns.include?(:updated_at)
+        :updated_at
+      elsif columns.include?(:created_at)
+        :created_at
+      else # TODO: Raise on unknown
+        :imported_at
+      end
     end
 
     def name
@@ -55,7 +61,7 @@ module Sq::Dbsync::Database
       # psql doesn't return a non-zero error code when executing commands from
       # a file. The best way I can come up with is to raise if anything is
       # present on stderr.
-      errors_file = Tempfile.new('extract_sql_to_file_errors')
+      errors_file = TempfileFactory.make('extract_sql_to_file_errors')
 
       cmd = %{bash -c "#{cmd.gsub(/"/, '\\"')}"}
 
@@ -66,6 +72,10 @@ module Sq::Dbsync::Database
       end
     ensure
       errors_file.close! if errors_file
+    end
+
+    def sql_to_file(sql)
+      TempfileFactory.make_with_content('extract_sql_to_file', sql)
     end
 
     private
@@ -85,6 +95,8 @@ module Sq::Dbsync::Database
 
     # This is a bit janky since it needs to escape SQL inside a string inside
     # double quotes inside a shell command.
+    #
+    # TODO: Is this still used?
     def escape_shell(sql)
       sql.gsub('`', '').gsub("'", '"')
     end
