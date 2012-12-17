@@ -140,11 +140,7 @@ class Sq::Dbsync::Manager
   end
 
   def expected_table_names
-    # TODO: Don't hard code these table names
-    tables_to_load.map {|x| x[:table_name] } + [
-      :permissions_user_deletes,
-      :freeze_deletes
-    ]
+    tables_to_load.map {|x| x[:table_name] } + config.fetch(:extra_tables, [])
   end
 
   def loop_with_retry_on(guard, transient_exceptions, &block)
