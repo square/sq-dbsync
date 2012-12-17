@@ -54,26 +54,28 @@ describe SQD::Manager do
     target[:test_table].count.should == 1
   end
 
-  it 'purges old tables from the database' do
+  it 'does not purge old tables from the database' do
     setup_target_table(now)
 
     manager = SQD::Manager.new(config, [])
     manager.batch_nonactive
-    target.table_exists?(:test_table).should_not be
+    target.table_exists?(:test_table).should be
   end
 
   it 'removes old tables from the registry' do
     setup_target_table(now)
 
     manager = SQD::Manager.new(config, [])
-    manager.increment_active_once
+    manager.increment_checkpoint
     registry.get(:test_table).should_not be
 
     # Dropping tables is delayed until the batch load, no rush.
     target.table_exists?(:test_table).should be
   end
 
-  it 'only batch loads the given tables' do
+  it 'only batch loads the given tables, even when batch load disabled' do
+    plan[0][:batch_load] = false
+
     manager = SQD::Manager.new(config, [
       [SQD:: StaticTablePlan.new(plan), :source],
     ])
@@ -82,9 +84,17 @@ describe SQD::Manager do
 
     manager.batch_nonactive([:test_table])
     target.table_exists?(:test_table).should be
+  end
+
+  it 'does not purge tables excluded from batch load' do
+    plan[0][:batch_load] = false
+    setup_target_table(now)
+
+    manager = SQD::Manager.new(config, [
+      [SQD::StaticTablePlan.new(plan), :source],
+    ])
 
     manager.batch_nonactive([:bogus])
-    target.table_exists?(:bogus).should_not be
     target.table_exists?(:test_table).should be
   end
 

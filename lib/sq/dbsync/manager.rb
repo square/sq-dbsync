@@ -14,20 +14,35 @@ class Sq::Dbsync::Manager
   include Sq::Dbsync
 
   EPOCH = Date.new(2000, 1, 1).to_time
+  MAX_RETRIES = 10
+
+  # A null object to use instead of passing an array of tables to load.
+  # Indicates that all tables should be loaded.
+  ALL_TABLES = Object.new
 
   def initialize(config, plans)
     @config = config
     @plans  = plans
   end
 
-  def batch_nonactive(tables = [])
-    measure(:batch_total) do
-      run_load(BatchLoadAction, Pipeline::ThreadedContext, tables)
-    end
+  def batch_nonactive(tables = ALL_TABLES)
+    registry.ensure_storage_exists
 
-    measure(:purge) do
-      purge_old_tables
-    end if tables.empty?
+    measure(:batch_total) do
+      raise_all_if_pipeline_failure(
+        run_load(BatchLoadAction, Pipeline::ThreadedContext, tables)
+      )
+    end
+  end
+
+  def refresh_recent(tables = ALL_TABLES)
+    registry.ensure_storage_exists
+
+    measure(:refresh_recent_total) do
+      raise_all_if_pipeline_failure(
+        run_load(RefreshRecentLoadAction, Pipeline::ThreadedContext, tables)
+      )
+    end
   end
 
   def increment_active
@@ -42,16 +57,30 @@ class Sq::Dbsync::Manager
         # No need to do this every cycle, 100 is chosen to be as good as any
         # other number. It should run on the very first cycle however so that
         # the specs will cover it.
-        verifier.check_consistency!(tables_to_load)
+        increment_checkpoint
       end
     end
   end
 
   def increment_active_once
-    # ThreadedContext would be ideal here, but it leaks memory in JRuby. Not
-    # sure why yet, but mass creation of threads seems like an obvious
-    # candidate for brokenness.
-    run_load(incremental_action, Pipeline::SimpleContext)
+    raise_if_pipeline_failure(
+      # ThreadedContext would be ideal here, but it leaks memory in JRuby. Not
+      # sure why yet, but mass creation of threads seems like an obvious
+      # candidate for brokenness.
+      #
+      # TODO: Above comment probably isn't true with 1.7 and ThreadedContext
+      # fixes.
+      run_load(incremental_action, Pipeline::SimpleContext)
+    )
+  end
+
+  # Actions that need to be performed regularly, but not every cycle. Please do
+  # suggest a better name for this method.
+  def increment_checkpoint
+    # No need to do this every cycle, 100 is chosen to be as good as any
+    # other number. It should run on the very first cycle however so that
+    # our specs will cover it.
+    verifier.check_consistency!(tables_to_load)
 
     purge_registry
   end
@@ -88,23 +117,23 @@ class Sq::Dbsync::Manager
 
   private
 
-  def run_load(action, context, tables = [])
+  def run_load(action, context, tables = ALL_TABLES)
     items = tables_to_load.map do |tplan|
-      next if tables.any? && !tables.include?(tplan[:table_name])
+      if tables != ALL_TABLES
+        next unless tables.include?(tplan[:table_name])
 
-      action.new(target, tplan, registry, logger, config[:clock])
+        # Force loading of specified tables, otherwise it would be impossible
+        # to batch load tables that were not regularly loaded.
+        tplan[:batch_load] = true
+
+        # Force refresh of tables, this is expected behaviour if you are
+        # calling the refresh-recent script with an explicit table list.
+        tplan[:refresh_recent] = true
+      end
+
+      action.new(db, tplan, registry, logger, config[:clock])
     end.compact
-    raise_if_pipeline_failure(
-      Pipeline.new(items, *LoadAction.stages).run(context)
-    )
-  end
-
-  def purge_old_tables
-    (target.tables - expected_table_names).each {|table|
-      next if table.to_s =~ /\Ameta_/
-
-      target.drop_table(table)
-    }
+    Pipeline.new(items, *LoadAction.stages).run(context)
   end
 
   # This is necessary so that old tables that are no longer being synced do not
@@ -114,6 +143,7 @@ class Sq::Dbsync::Manager
   end
 
   def expected_table_names
+    # TODO: Don't hard code these table names
     tables_to_load.map {|x| x[:table_name] } + [
       :permissions_user_deletes,
       :freeze_deletes
@@ -129,7 +159,7 @@ class Sq::Dbsync::Manager
         consecutive_fails = 0
       rescue *transient_exceptions
         consecutive_fails += 1
-        raise if consecutive_fails >= 3
+        raise if consecutive_fails >= MAX_RETRIES
       end
     end
   end
@@ -142,8 +172,24 @@ class Sq::Dbsync::Manager
     end
   end
 
+  def raise_all_if_pipeline_failure(results)
+    failed = false
+    results.each do |result|
+      if result.is_a?(Pipeline::Failure)
+        Application.notify_error(result.task.tag, result.wrapped_exception)
+        failed = true
+      end
+    end
+
+    if failed
+      raise Database::ExtractError,
+        "One or more loads failed, see other exceptions for details."
+    end
+  end
+
   def measure(label, &block)
-#     logger.measure(label) do
+    # TODO: Uncomment this
+#     logger.measure("%s.%s" % [Batcave.env, label]) do
       block.call
 #     end
   end
@@ -158,6 +204,10 @@ class Sq::Dbsync::Manager
 
   def logger
     config[:logger]
+  end
+
+  def db
+    @db ||= Database::Connection.create(config[:target])
   end
 
   def transient_exceptions
