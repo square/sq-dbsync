@@ -24,11 +24,16 @@ module Sq::Dbsync
 
       {
         source_db:  source,
+        source_table_name: t,
         table_name: t,
         columns:    cols,
         indexes:    {},
         always_sync: true
       }
+    rescue Sequel::DatabaseError
+      # This handles a race condition where the table is deleted between us
+      # selecting the list of tables and fetching the schema.
+      nil
     end
 
     def has_primary_key?(schema)
