@@ -50,7 +50,7 @@ module Sq::Dbsync
     end
 
     def ensure_storage_exists
-      db.create_table?(table_name) do
+      db.create_table?(table_name, charset: 'utf8') do
         String   :table_name, primary_key: true
         DateTime :last_synced_at
         DateTime :last_batch_synced_at

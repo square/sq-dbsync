@@ -71,6 +71,73 @@ describe 'Syncing source databases to a target' do
     end
   end
 
+  context 'refresh recent load' do
+    before do
+      manager.batch_nonactive
+    end
+
+    it 'reloads all recent data' do
+      deleted = 1
+      to_keep = 2
+      new_row = 3
+
+      target[:test_table].insert(id: deleted, updated_at: @now)
+      target[:test_table].insert(id: to_keep, updated_at: @now - 1.week)
+      source[:test_table  ].insert(id: new_row, updated_at: @now - 1.minute)
+
+      x = target[:test_table].map {|x| x[:id] }
+      alfred.refresh_recent
+
+      target[:test_table].map {|x| x[:id] }.should include(new_row)
+      target[:test_table].map {|x| x[:id] }.should include(to_keep)
+      target[:test_table].map {|x| x[:id] }.should_not include(deleted)
+    end
+
+    describe 'when a column is provided' do
+      let(:plan) {[{
+        table_name: :test_table,
+        refresh_recent: :reporting_date,
+        source_table_name: :test_table,
+        columns:    [:id, :updated_at, :reporting_date]
+      }] }
+
+      it 'adds an extra filter when a column is provided' do
+        deleted = 1
+        to_keep = 2
+        new_row = 3
+        to_keep2 = 4
+
+        target[:test_table].insert(
+          id:             deleted,
+          updated_at:     @now,
+          reporting_date: @now
+        )
+        target[:test_table].insert(
+          id:             to_keep,
+          updated_at:     @now - 1.week,
+          reporting_date: @now
+        )
+        target[:test_table].insert(
+          id:             to_keep2,
+          updated_at:     @now,
+          reporting_date: @now - 1.week
+        )
+        source[:test_table].insert(
+          id:         new_row,
+          updated_at: @now - 1.minute
+        )
+
+        x = target[:test_table].map {|x| x[:id] }
+        alfred.refresh_recent
+
+        target[:test_table].map {|x| x[:id] }.should include(new_row)
+        target[:test_table].map {|x| x[:id] }.should include(to_keep)
+        target[:test_table].map {|x| x[:id] }.should include(to_keep2)
+        target[:test_table].map {|x| x[:id] }.should_not include(deleted)
+      end
+    end
+  end
+
   context 'incremental loads' do
     let(:worker) { @worker }
     before do
