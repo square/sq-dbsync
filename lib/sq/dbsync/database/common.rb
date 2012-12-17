@@ -1,7 +1,9 @@
-require 'tempfile'
+require 'sq/dbsync/tempfile_factory'
 
 module Sq::Dbsync::Database
   module Common
+
+    SQD = ::Sq::Dbsync
 
     def extract_to_file(table_name, columns, file_name)
       extract_sql_to_file("SELECT %s FROM %s" % [
@@ -68,7 +70,7 @@ module Sq::Dbsync::Database
       # psql doesn't return a non-zero error code when executing commands from
       # a file. The best way I can come up with is to raise if anything is
       # present on stderr.
-      errors_file = TempfileFactory.make('extract_sql_to_file_errors')
+      errors_file = SQD::TempfileFactory.make('extract_sql_to_file_errors')
 
       cmd = %{bash -c "#{cmd.gsub(/"/, '\\"')}"}
 
@@ -82,7 +84,7 @@ module Sq::Dbsync::Database
     end
 
     def sql_to_file(sql)
-      TempfileFactory.make_with_content('extract_sql_to_file', sql)
+      SQD::TempfileFactory.make_with_content('extract_sql_to_file', sql)
     end
 
     private

@@ -1,8 +1,8 @@
 require 'date'
-require 'tempfile'
 require 'ostruct'
 
 require 'sq/dbsync/schema_maker'
+require 'sq/dbsync/tempfile_factory'
 
 module Sq::Dbsync
   # An stateful action object representing the transfer of data from a source

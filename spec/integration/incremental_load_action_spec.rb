@@ -13,6 +13,7 @@ describe SQD::IncrementalLoadAction do
   let(:target) { test_target }
   let(:table_plan) {{
     table_name: :test_table,
+    source_table_name: :test_table,
     columns: [:id, :col1, :updated_at],
     source_db: source,
     indexes: {}

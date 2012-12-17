@@ -14,6 +14,7 @@ describe SQD::BatchLoadAction do
   let(:target) { test_target }
   let(:table_plan) {{
     table_name: :test_table,
+    source_table_name: :test_table,
     columns: [:id, :col1, :updated_at],
     source_db: source,
     indexes: index
@@ -38,6 +39,8 @@ describe SQD::BatchLoadAction do
         pii:        'don alias',
         updated_at: now - 10
       )
+
+      registry.ensure_storage_exists
     end
 
     describe ':all columns options' do

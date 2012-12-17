@@ -139,6 +139,7 @@ module Sq::Dbsync::Database
       # outputting them, allowing us to stream large tables correctly.
       cmd += " --quick"
 
+      cmd += " < #{file.path}"
       cmd += " | sed 's/NULL/\\\\\\N/g'"
       cmd += " > %s" % file_name
 
