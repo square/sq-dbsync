@@ -103,6 +103,8 @@ Documentation
 TODO
 
 Plan options
+READ COMMITTED
+Handling deletes
 
 Developing
 ----------
