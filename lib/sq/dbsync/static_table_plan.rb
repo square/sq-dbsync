@@ -14,7 +14,7 @@
 #  }]
 class Sq::Dbsync::StaticTablePlan
   def initialize(spec)
-    @spec = spec
+    @spec = format_spec(spec)
   end
 
   def tables(source)
@@ -25,5 +25,18 @@ class Sq::Dbsync::StaticTablePlan
 
   def deep_clone(object)
     Marshal.load(Marshal.dump(object))
+  end
+
+  def format_spec(spec)
+    # Support copying from different relations of a Postgres DB, but to the
+    # same target database in MySQL.
+    spec.map do |table_def|
+      unless table_def[:source_table_name]
+        table_def[:source_table_name] = table_def[:table_name]
+        table_def[:table_name] = table_def[:source_table_name].
+          to_s.gsub('__', '_').to_sym
+      end
+      table_def
+    end
   end
 end
