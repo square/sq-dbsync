@@ -17,18 +17,12 @@ class Sq::Dbsync::Manager
   EPOCH = Date.new(2000, 1, 1).to_time
   MAX_RETRIES = 10
 
-  # A null object to use instead of passing an array of tables to load.
-  # Indicates that all tables should be loaded.
-  #
-  # TODO: Replace with symbol :all
-  ALL_TABLES = Object.new
-
   def initialize(config, plans)
     @config = config
     @plans  = plans
   end
 
-  def batch_nonactive(tables = ALL_TABLES)
+  def batch_nonactive(tables = :all)
     registry.ensure_storage_exists
 
     measure(:batch_total) do
@@ -38,7 +32,7 @@ class Sq::Dbsync::Manager
     end
   end
 
-  def refresh_recent(tables = ALL_TABLES)
+  def refresh_recent(tables = :all)
     registry.ensure_storage_exists
 
     measure(:refresh_recent_total) do
@@ -120,9 +114,9 @@ class Sq::Dbsync::Manager
 
   private
 
-  def run_load(action, context, tables = ALL_TABLES)
+  def run_load(action, context, tables = :all)
     items = tables_to_load.map do |tplan|
-      if tables != ALL_TABLES
+      if tables != :all
         next unless tables.include?(tplan[:table_name])
 
         # Force loading of specified tables, otherwise it would be impossible
