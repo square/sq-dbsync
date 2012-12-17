@@ -35,13 +35,9 @@ module Sq::Dbsync::Database
     end
 
     def timestamp_column(columns)
-      if columns.include?(:updated_at)
-        :updated_at
-      elsif columns.include?(:created_at)
-        :created_at
-      else # TODO: Raise on unknown
-        :imported_at
-      end
+      [:updated_at, :created_at, :imported_at].detect {|x|
+        columns.include?(x)
+      } || raise("No timestamp column: #{columns.join(', ')}")
     end
 
     def name
@@ -100,14 +96,6 @@ module Sq::Dbsync::Database
         pid = Process.spawn(cmd, STDERR => errors_file.path)
         Process.waitpid2(pid)[1]
       end
-    end
-
-    # This is a bit janky since it needs to escape SQL inside a string inside
-    # double quotes inside a shell command.
-    #
-    # TODO: Is this still used?
-    def escape_shell(sql)
-      sql.gsub('`', '').gsub("'", '"')
     end
 
   end
