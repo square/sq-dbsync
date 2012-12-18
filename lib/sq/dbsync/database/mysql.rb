@@ -45,7 +45,7 @@ module Sq::Dbsync::Database
       db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s (%s)" % [
         file_name,
         table_name,
-        columns.join(', ')
+        escape_columns(columns)
       ]
     rescue Sequel::DatabaseError => e
       transient_regex =
