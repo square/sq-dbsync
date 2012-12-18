@@ -13,7 +13,7 @@ def db_options(opts)
       adapter: "jdbc",
       uri: begin
         base = 'jdbc:%s://%s:%i/%s?user=%s' % [
-          opts.fetch(:type),
+          opts.fetch(:brand),
           opts.fetch(:host),
           opts.fetch(:port),
           opts.fetch(:database),
