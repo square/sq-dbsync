@@ -124,7 +124,7 @@ class Sq::Dbsync::Manager
     end]
   end
 
-  attr_accessor :config, :plans
+  attr_accessor :config, :plans, :error_handler
 
   private
 
@@ -183,7 +183,7 @@ class Sq::Dbsync::Manager
     failed = false
     results.each do |result|
       if result.is_a?(Pipeline::Failure)
-        Application.notify_error(result.task.tag, result.wrapped_exception)
+        error_handler.notify_error(result.task.tag, result.wrapped_exception)
         failed = true
       end
     end

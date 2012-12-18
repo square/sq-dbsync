@@ -25,11 +25,12 @@ module Sq::Dbsync::Database
 
     def load_from_file(table_name, columns, file_name)
       ensure_connection
-      db.run "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s (%s)" % [
+      sql = "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s (%s)" % [
         file_name,
         table_name,
-        columns.join(', ')
+        escape_columns(columns)
       ]
+      db.run sql
     end
 
     def set_lock_timeout(seconds)

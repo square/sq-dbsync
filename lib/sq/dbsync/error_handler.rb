@@ -19,12 +19,22 @@ module Sq::Dbsync
       end
     end
 
+    def notify_error(tag, ex)
+      with_massaged_exception(redact_passwords) do
+        raise ex, "[%s] %s" % [tag, ex.message], ex.backtrace
+      end
+    rescue => e
+      handler[e]
+    end
+
     def redact_passwords
       lambda do |message|
         (
           config[:sources].values + [config[:target]]
         ).compact.inject(message) do |m, options|
-          m.gsub(options[:password], 'REDACTED')
+          if options[:password]
+            m.gsub(options[:password], 'REDACTED')
+          end
         end
       end
     end
