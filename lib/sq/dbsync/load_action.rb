@@ -82,7 +82,7 @@ module Sq::Dbsync
     end
 
     def add_schema_to_table_plan(x)
-      x.schema ||= x.source_db.hash_schema(x.table_name)
+      x.schema ||= x.source_db.hash_schema(x.source_table_name)
       x
     end
 
@@ -98,13 +98,13 @@ module Sq::Dbsync
       plan.source_db.ensure_connection
       plan.source_db.set_lock_timeout(10)
 
-      last_row_at = plan.source_db[plan.table_name].
+      last_row_at = plan.source_db[plan.source_table_name].
         max(([:updated_at, :created_at, :imported_at] & plan.columns)[0])
 
       file = make_writeable_tempfile
 
       plan.source_db.extract_incrementally_to_file(
-        plan.table_name,
+        plan.source_table_name,
         plan.columns,
         file.path,
         since,
