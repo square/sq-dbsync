@@ -98,7 +98,7 @@ module Sq::Dbsync
       plan.source_db.ensure_connection
       plan.source_db.set_lock_timeout(10)
 
-      last_row_at = plan.source_db[plan.source_table_name].
+      last_row_at = timestamp_table(plan).
         max(([:updated_at, :created_at, :imported_at] & plan.columns)[0])
 
       file = make_writeable_tempfile
