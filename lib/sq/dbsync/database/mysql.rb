@@ -65,14 +65,14 @@ module Sq::Dbsync::Database
     # auxilary timestamp column for the case where the primary one is not
     # indexed on the target (such as the DFR reports, where imported_at is not
     # indexed, but reporting date is).
-    def delete_recent(table_name, columns, since, aux_timestamp_column = nil)
+    def delete_recent(plan, since)
       ensure_connection
-      query = db[table_name].
-        filter("#{timestamp_column(columns)} > ?", since)
+      query = db[plan.table_name].
+        filter("#{plan.timestamp} > ?", since)
 
-      if aux_timestamp_column.is_a?(Symbol)
+      if plan.aux_timestamp_column
         query = query.filter(
-          "#{aux_timestamp_column} > ?",
+          "#{plan.aux_timestamp_column} > ?",
           since - AUX_TIME_BUFFER
         )
       end

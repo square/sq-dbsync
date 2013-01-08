@@ -37,7 +37,7 @@ module Sq::Dbsync
         tname   = plan.table_name
         columns = plan.columns
         db.transaction do
-          db.delete_recent(tname, columns, @since, plan.refresh_recent)
+          db.delete_recent(plan, @since)
           db.load_from_file(tname, columns, @file.path)
         end
       end

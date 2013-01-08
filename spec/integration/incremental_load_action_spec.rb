@@ -32,11 +32,13 @@ describe SQD::IncrementalLoadAction do
       create_source_table_with({
         id:         1,
         col1:       'old record',
-        updated_at: last_synced_at - overlap - 1
+        updated_at:  last_synced_at - overlap - 1,
+        imported_at: last_synced_at - overlap - 1,
       }, {
         id:         2,
         col1:       'new record',
-        updated_at: last_synced_at - overlap + 1
+        updated_at:  last_synced_at - overlap + 1,
+        imported_at: last_synced_at - overlap + 1,
       })
 
       setup_target_table(last_synced_at)
@@ -121,6 +123,34 @@ describe SQD::IncrementalLoadAction do
 
       target[:test_table].map { |row| row.values_at(:col1) }.
         should == [['new record']]
+    end
+
+
+    describe 'with custom timestamp' do
+      let(:table_plan) {{
+        table_name: :test_table,
+        source_table_name: :test_table,
+        columns: [:id, :col1, :imported_at],
+        timestamp: :imported_at,
+        source_db: source,
+        indexes: {}
+      }}
+
+      it 'copies source data to the target since the last synced row' do
+        registry.update(:test_table, last_synced_at,
+          last_synced_at: last_synced_at + 2,
+          last_row_at:    last_synced_at
+        )
+
+        action.call
+
+        target[:test_table].map { |row| row.values_at(:id, :col1) }.
+          should == [[2, 'new record']]
+
+        metadata = registry.get(:test_table)
+        metadata[:last_synced_at].to_i.should == now.to_i
+        metadata[:last_row_at].to_i.should == (last_synced_at - overlap + 1).to_i
+      end
     end
 
     context 'always_sync = true' do

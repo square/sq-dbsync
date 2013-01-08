@@ -16,6 +16,7 @@ def create_source_table_with(*rows)
     String       :pii
     DateTime     :updated_at
     DateTime     :created_at
+    DateTime     :imported_at
   end
 
   rows.each do |row|

@@ -142,6 +142,10 @@ class Sq::Dbsync::Manager
         tplan[:refresh_recent] = true
       end
 
+      if tplan[:refresh_recent].is_a?(Symbol)
+        tplan[:aux_timestamp_column] = tplan[:refresh_recent]
+      end
+
       action.new(db, tplan, registry, logger, config[:clock])
     end.compact
     Pipeline.new(items, *LoadAction.stages).run(context)

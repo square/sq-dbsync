@@ -73,6 +73,8 @@ module Sq::Dbsync
       add_schema_to_table_plan(plan)
       plan.prefixed_table_name = (prefix + plan.table_name.to_s).to_sym
       filter_columns
+      plan.timestamp ||=
+        ([:updated_at, :created_at] & plan.columns)[0]
     end
 
     def ensure_target_exists
@@ -99,13 +101,12 @@ module Sq::Dbsync
       plan.source_db.set_lock_timeout(10)
 
       last_row_at = timestamp_table(plan).
-        max(([:updated_at, :created_at, :imported_at] & plan.columns)[0])
+        max(plan.timestamp)
 
       file = make_writeable_tempfile
 
       plan.source_db.extract_incrementally_to_file(
-        plan.source_table_name,
-        plan.columns,
+        plan,
         file.path,
         since,
         0

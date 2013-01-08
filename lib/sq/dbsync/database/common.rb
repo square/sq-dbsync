@@ -12,18 +12,13 @@ module Sq::Dbsync::Database
       ], file_name)
     end
 
-    def extract_incrementally_to_file(table_name,
-                                     columns,
-                                     file_name,
-                                     last_row_at,
-                                     overlap)
-      table_name = table_name.to_sym
+    def extract_incrementally_to_file(plan, file_name, last_row_at, overlap)
+      table_name = plan.source_table_name.to_sym
       db_columns = db.schema(table_name).map(&:first)
-      timestamp = timestamp_column(columns)
 
-      query = self[table_name].select(*columns)
+      query = self[table_name].select(*plan.columns)
       if last_row_at
-        query = query.filter("#{timestamp} > ?", last_row_at - overlap)
+        query = query.filter("#{plan.timestamp} > ?", last_row_at - overlap)
       end
 
       extract_sql_to_file(query.sql, file_name)
@@ -32,12 +27,6 @@ module Sq::Dbsync::Database
     def hash_schema(table_name)
       ensure_connection
       Hash[schema(table_name)]
-    end
-
-    def timestamp_column(columns)
-      [:updated_at, :created_at, :imported_at].detect {|x|
-        columns.include?(x)
-      } || raise("No timestamp column: #{columns.join(', ')}")
     end
 
     def name
