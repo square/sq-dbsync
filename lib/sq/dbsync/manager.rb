@@ -74,6 +74,12 @@ class Sq::Dbsync::Manager
   end
 
   def incremental_once
+    # In theory, this ensures that any changes to the source IP (such as from a
+    # virtual IP flip) are picked up.
+    sources.each do |_, db|
+      db.disconnect
+    end
+
     raise_if_pipeline_failure(
       # ThreadedContext would be ideal here, but it leaks memory in JRuby. Not
       # sure why yet, but mass creation of threads seems like an obvious
