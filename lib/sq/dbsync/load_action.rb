@@ -146,7 +146,7 @@ module Sq::Dbsync
     # row we have seen. This needs to comfortably more that the maximum
     # expected time for a long running transaction.
     def self.overlap
-      180
+      120
     end
 
     def make_writeable_tempfile
