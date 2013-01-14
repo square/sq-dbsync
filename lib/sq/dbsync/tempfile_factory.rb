@@ -27,5 +27,13 @@ module Sq::Dbsync
       file
     end
 
+    def self.split(file, n, &block)
+      `split -l #{n} #{file.path} #{file.path}.`
+      Dir[file.path + '.*'].each do |tempfile|
+        block.call(tempfile)
+        FileUtils.rm(tempfile)
+      end
+    end
+
   end
 end
