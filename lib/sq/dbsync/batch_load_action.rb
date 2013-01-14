@@ -27,7 +27,7 @@ module Sq::Dbsync
 
     def load_data
       measure(:load) do
-        TempfileFactory.split(@file, 100_000) do |path|
+        TempfileFactory.split(@file, 100_000, logger) do |path|
           db.load_from_file(
             plan.prefixed_table_name,
             plan.columns,
