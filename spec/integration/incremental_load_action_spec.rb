@@ -149,7 +149,7 @@ describe SQD::IncrementalLoadAction do
 
         metadata = registry.get(:test_table)
         metadata[:last_synced_at].to_i.should == now.to_i
-        metadata[:last_row_at].to_i.should == (last_synced_at - overlap + 1).to_i
+        metadata[:last_row_at].to_i.should == (last_synced_at-overlap+1).to_i
       end
     end
 
