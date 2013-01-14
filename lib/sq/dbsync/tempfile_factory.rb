@@ -27,5 +27,15 @@ module Sq::Dbsync
       file
     end
 
+    def self.split(file, n, logger, &block)
+      `split -l #{n} #{file.path} #{file.path}.`
+      files = Dir[file.path + '.*']
+      files.each_with_index do |tempfile, i|
+        logger.log("Loading chunk #{i+1}/#{files.length}")
+        block.call(tempfile)
+        FileUtils.rm(tempfile)
+      end
+    end
+
   end
 end
