@@ -21,7 +21,7 @@ module Sq::Dbsync
 
     def extract_data
       @start_time  = now.call
-      @file, @last_row_at = measure(:extract) { extract_to_file(EPOCH) }
+      @file, @last_row_at = measure(:extract) { extract_to_file(nil) }
       self
     end
 
@@ -64,7 +64,7 @@ module Sq::Dbsync
 
     def catchup
       file, @last_row_at = measure(:catchup_extract) {
-        extract_to_file((@last_row_at || EPOCH) - overlap)
+        extract_to_file(@last_row_at ? @last_row_at - overlap : nil)
       }
       measure(:catchup_load) do
         db.load_incrementally_from_file(
