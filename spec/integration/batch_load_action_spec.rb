@@ -203,6 +203,21 @@ describe SQD::BatchLoadAction do
     let(:source) { test_source(:source) }
 
     it_should_behave_like 'a batch load'
+
+    it 'loads records with bodgy timestamps' do
+      create_source_table_with(
+        id:         1,
+        col1:       'hello',
+        pii:        'don alias',
+        created_at: '0000-00-00 00:00:00',
+        updated_at: '0000-00-00 00:00:00'
+      )
+      registry.ensure_storage_exists
+
+      action.call
+
+      target[:test_table].count.should == 1
+    end
   end
 
   describe 'with PG source' do
