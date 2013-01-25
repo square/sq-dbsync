@@ -34,6 +34,8 @@ module Sq::Dbsync
         ).compact.inject(message) do |m, options|
           if options[:password]
             m.gsub(options[:password], 'REDACTED')
+          else
+            m
           end
         end
       end

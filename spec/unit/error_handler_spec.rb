@@ -7,6 +7,7 @@ describe Sq::Dbsync::ErrorHandler do
     sources: {
       db_a: { password: 'redactme' },
       db_b: { password: 'alsome' },
+      db_c: {}
     },
     target: { password: 'thistoo'},
   }}
