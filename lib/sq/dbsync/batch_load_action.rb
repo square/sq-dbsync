@@ -4,7 +4,7 @@ module Sq::Dbsync
   # Load action to reload an entire table in full. The table will be loaded in
   # parallel to the existing one, then atomically swapped in on completion.
   class BatchLoadAction < LoadAction
-    MAX_LAG = 60
+    MAX_LAG = 60 * 5
 
     def operation; 'batch'; end
 
