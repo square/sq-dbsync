@@ -1,5 +1,5 @@
-SqDbsync
-========
+Square Dbsync
+=============
 
 An extract and load system to shunt data between databases.
 
@@ -7,10 +7,10 @@ It uses timestamp based replication which is fast and easy to keep running,
 but has some caveats. Most notably, it does not handle deletes well (see
 documentation below for details).
 
-This was useful to us because we needed partial (only select columns),
-continous replication from both MySQL and Postgres databases to a single target
-database with some basic ETL logic along the way. None of the existing
-solutions were able to do this adequately.
+This was useful to us at Square because we needed partial (only select
+columns), continous replication from both MySQL and Postgres databases to a
+single target database with some basic ETL logic along the way. None of the
+existing solutions were able to do this adequately.
 
 At some point you will need to bite the bullet and implement a real ETL system,
 but `sq-dbsync` can tide you over until you get there.
@@ -201,3 +201,18 @@ Developing
     bundle
     bundle exec rake
 
+Compatibility
+-------------
+
+Requires 1.9. Tested on CRuby 1.9.3 and JRuby.
+
+## Support
+
+Make a [new github issue](https://github.com/square/sq-dbsync/issues/new).
+
+## Contributing
+
+Fork and patch! Before any changes are merged to master, we need you to sign an
+[Individual Contributor
+Agreement](https://spreadsheets.google.com/a/squareup.com/spreadsheet/viewform?formkey=dDViT2xzUHAwRkI3X3k5Z0lQM091OGc6MQ&ndplr=1)
+(Google Form).
