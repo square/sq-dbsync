@@ -54,9 +54,9 @@ config = {
   },
 
   # Optional configuration
-  logger: Loggers::Stream.new,
-  clock: ->{ Time.now.utc },
-  error_handler: ->(e) { $stderr.puts(e) } # Notify your exception system
+  logger: Loggers::Stream.new,     # A graphite logger is provided, see source.
+  clock: ->{ Time.now.utc },       # In test env it can be useful to fix this.
+  error_handler: ->(e) { puts(e) } # Notify your exception system
 }
 
 # Write plans that specify how data is replicated.
