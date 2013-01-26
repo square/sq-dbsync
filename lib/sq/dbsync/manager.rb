@@ -1,3 +1,4 @@
+require 'sq/dbsync/config'
 require 'sq/dbsync/batch_load_action'
 require 'sq/dbsync/incremental_load_action'
 require 'sq/dbsync/refresh_recent_load_action'
@@ -18,7 +19,7 @@ class Sq::Dbsync::Manager
   MAX_RETRIES = 10
 
   def initialize(config, plans)
-    @config        = config
+    @config        = Sq::Dbsync::Config.make(config)
     @plans         = plans
     @error_handler = ErrorHandler.new(config)
   end

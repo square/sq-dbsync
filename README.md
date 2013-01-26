@@ -44,6 +44,7 @@ config = {
     port:     3306,
   },
 
+  # Optional configuration
   logger: Loggers::Stream.new,
   clock: ->{ Time.now.utc },
   error_handler: ->(e) { $stderr.puts(e) } # Notify your exception system
