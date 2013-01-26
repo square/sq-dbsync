@@ -11,8 +11,6 @@ include Sq::Dbsync
 
 # TODO: Provide sane defaults for logger, clock, port numbers, JDBC
 # TODO: Is brand required anymore? It's kinda weird.
-# TODO: Move Application logic inside the gem, allow exception handler to be
-# specified
 
 # Config will typically differ per environment.
 config = {
@@ -47,7 +45,8 @@ config = {
   },
 
   logger: Loggers::Stream.new,
-  clock: ->{ Time.now.utc }
+  clock: ->{ Time.now.utc },
+  error_handler: ->(e) { $stderr.puts(e) } # Notify your exception system
 }
 
 # Write plans that specify how data is replicated.
