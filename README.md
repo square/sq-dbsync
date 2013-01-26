@@ -9,9 +9,6 @@ Usage
 ``` Ruby
 include Sq::Dbsync
 
-# TODO: Provide sane defaults for logger, clock, port numbers, JDBC
-# TODO: Is brand required anymore? It's kinda weird.
-
 # Config will typically differ per environment.
 config = {
   sources: {
@@ -82,9 +79,6 @@ plans = [
 ]
 
 manager = Manager.new(config, plans)
-
-# TODO: Rename these methods to something more sane, collapse batch and
-# refresh.
 
 # Run a batch load nightly
 manager.batch(ALL_TABLES)
