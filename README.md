@@ -18,7 +18,13 @@ but `sq-dbsync` can tide you over until you get there.
 Usage
 -----
 
+```
+gem install sq-dbsync
+```
+
 ``` Ruby
+require 'sq/dbsync'
+
 include Sq::Dbsync
 
 # Config will typically differ per environment.
