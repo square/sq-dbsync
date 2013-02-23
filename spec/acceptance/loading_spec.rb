@@ -206,12 +206,6 @@ describe 'Syncing source databases to a target' do
     end
   end
 
-  def run_failed_batch
-    logger.callbacks = { 'batcave.test.switch_active' => ->{ raise } }
-
-    ->{ manager.batch_nonactive }.should raise_error
-  end
-
   def setup_source_table
     source.create_table! :test_table do
       primary_key  :id

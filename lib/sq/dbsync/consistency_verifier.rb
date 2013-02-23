@@ -51,9 +51,9 @@ module Sq::Dbsync
     # occurs, though in the past buggy handling of replication lag was normally
     # the culprit.
     #
-    # If it does occur, a good first response is to set `last_sync_times` to the
-    # last batch time (usually within 24 hours) which will force batcave to
-    # reconsider all recent records.
+    # If it does occur, a good first response is to set `last_sync_time` to the
+    # last batch time (usually within 24 hours) which will force the
+    # incremental load to reconsider all recent records.
     class ConsistencyError < RuntimeError
       def initialize(table_name, delta, description="")
         @table_name  = table_name
