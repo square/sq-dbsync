@@ -8,7 +8,7 @@ but has some caveats. Most notably, it does not handle deletes well (see
 documentation below for details).
 
 This was useful to us at Square because we needed partial (only select
-columns), continous replication from both MySQL and Postgres databases to a
+columns), continuous replication from both MySQL and PostgreSQL databases to a
 single target database with some basic ETL logic along the way. None of the
 existing solutions were able to do this adequately.
 
