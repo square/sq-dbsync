@@ -4,7 +4,6 @@ require 'sq/dbsync/incremental_load_action'
 require 'sq/dbsync/refresh_recent_load_action'
 require 'sq/dbsync/pipeline'
 require 'sq/dbsync/table_registry'
-require 'sq/dbsync/consistency_verifier'
 require 'sq/dbsync/database/connection'
 require 'sq/dbsync/error_handler'
 
@@ -98,8 +97,6 @@ class Sq::Dbsync::Manager
     # No need to do this every cycle, 100 is chosen to be as good as any
     # other number. It should run on the very first cycle however so that
     # our specs will cover it.
-    verifier.check_consistency!(tables_to_load)
-
     purge_registry
   end
 
@@ -213,10 +210,6 @@ class Sq::Dbsync::Manager
 
   def registry
     TableRegistry.new(target)
-  end
-
-  def verifier
-    @verifier ||= ConsistencyVerifier.new(target, registry)
   end
 
   def logger
