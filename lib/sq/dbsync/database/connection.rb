@@ -12,7 +12,9 @@ module Sq::Dbsync::Database
     def self.create(opts)
       case opts[:brand]
       when 'mysql'
-        Sq::Dbsync::Database::Mysql.new(Sequel.connect(opts))
+        db = Sq::Dbsync::Database::Mysql.new(Sequel.connect(opts))
+        db.charset = opts[:charset] if opts[:charset]
+        db
       when 'postgresql'
         Sq::Dbsync::Database::Postgres.new(Sequel.connect(opts))
       else

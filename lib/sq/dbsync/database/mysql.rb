@@ -16,6 +16,8 @@ module Sq::Dbsync::Database
 
     include Common
 
+    attr_accessor :charset
+
     def initialize(db)
       super
       @db = db
@@ -25,9 +27,11 @@ module Sq::Dbsync::Database
 
     def load_from_file(table_name, columns, file_name)
       ensure_connection
-      sql = "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s (%s)" % [
+      character_set = self.charset ? " character set #{self.charset}" : ""
+      sql = "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s %s (%s)" % [
         file_name,
         table_name,
+        character_set,
         escape_columns(columns)
       ]
       db.run sql
@@ -42,9 +46,11 @@ module Sq::Dbsync::Database
       # Very low lock wait timeout, since we don't want loads to be blocked
       # waiting for long queries.
       set_lock_timeout(10)
-      db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s (%s)" % [
+      character_set = self.charset ? " character set #{self.charset}" : ""
+      db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s %s (%s)" % [
         file_name,
         table_name,
+        character_set,
         escape_columns(columns)
       ]
     rescue Sequel::DatabaseError => e
@@ -134,6 +140,9 @@ module Sq::Dbsync::Database
       cmd += " -p%s"    % opts[:password] if opts[:password]
       cmd += " -h %s"   % opts[:host]     if opts[:host]
       cmd += " -P %i"   % opts[:port]     if opts[:port]
+
+      cmd += " --default-character-set %s" % opts[:charset] if opts[:charset]
+
       cmd += " %s"      % opts.fetch(:database)
 
       # This option prevents mysql from buffering results in memory before
