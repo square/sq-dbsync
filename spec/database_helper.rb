@@ -34,6 +34,7 @@ end
 
 TEST_SOURCES = {
   source:     db_options(database: 'sq_dbsync_test_source'),
+  mb4_source: db_options(database: 'sq_dbsync_mb4_test_source', charset: "utf8mb4"),
   alt_source: db_options(database: 'sq_dbsync_test_source_alt'),
   postgres:   db_options(
     user:     `whoami`.chomp,
@@ -43,6 +44,7 @@ TEST_SOURCES = {
   )
 }
 TEST_TARGET = db_options(database: 'sq_dbsync_test_target')
+MB4_TEST_TARGET = db_options(database: 'sq_dbsync_test_target', charset:"utf8mb4")
 
 $target = nil
 def test_target

@@ -14,13 +14,14 @@ describe 'Syncing source databases to a target' do
     SQD::Manager.new(config, [[SQD::StaticTablePlan.new(plan), :source]])
   }
   let(:source)     { manager.sources.fetch(:source) }
+  let(:mb4_source) { manager.sources.fetch(:mb4_source) }
   let(:alt_source) { manager.sources.fetch(:alt_source) }
   let(:target) { manager.target }
   let(:plan) {[{
     table_name: :test_table,
     source_table_name: :test_table,
     refresh_recent: true,
-    columns:    [:id, :updated_at]
+    columns:    [:id, :updated_at, :value]
   }] }
 
   MINUTE = 60
@@ -74,6 +75,34 @@ describe 'Syncing source databases to a target' do
       target[:test_table     ].map {|x| x[:id] }.should include(row)
       target[:alt_test_table ].map {|x| x[:id] }.should include(alt_row)
     end
+
+    it 'handles utf8mb4 inputs' do
+      plan = [{
+                table_name: :mb4_test_table,
+                source_table_name: :mb4_test_table,
+                refresh_recent: true,
+                columns: [:id, :updated_at, :value],
+                charset: "utf8mb4"
+              }]
+
+      config = {
+        sources: TEST_SOURCES,
+        target:  MB4_TEST_TARGET,
+        logger:  SQD::Loggers::Composite.new([logger]),
+        clock:   ->{ @now }
+      }
+
+      manager = SQD::Manager.new(config, [[SQD::StaticTablePlan.new(plan), :mb4_source]])
+
+      row = mb4_source[:mb4_test_table].insert(updated_at: @now, value: "\u{1f4a9}")
+
+      manager.batch_nonactive
+
+      manager.target[:mb4_test_table].map {|x| x[:id] }.should include(row)
+      manager.target[:mb4_test_table].map {|x| x[:value] }.should include("\u{1f4a9}")
+      manager.target[:meta_last_sync_times].count.should == 1
+    end
+
   end
 
   context 'refresh recent load' do
@@ -211,6 +240,13 @@ describe 'Syncing source databases to a target' do
       primary_key  :id
       DateTime :reporting_date
       DateTime :updated_at
+      String :value
+    end
+    mb4_source.create_table! :mb4_test_table, charset:"utf8mb4" do
+      primary_key  :id
+      DateTime :reporting_date
+      DateTime :updated_at
+      String :value
     end
     source.create_table! :test_table_2 do
       primary_key  :id
