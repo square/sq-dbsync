@@ -51,6 +51,10 @@ module Sq::Dbsync::Database
 
         "time without time zone" => "time",
         "timestamp without time zone" => "datetime",
+
+        # mysql has no single-column representation for timestamp with time zone
+        "timestamp with time zone" => "datetime",
+
         "boolean" => "char(1)"
       }.fetch(db_type, db_type)
     end
@@ -60,7 +64,7 @@ module Sq::Dbsync::Database
       file = sql_to_file(sql)
 
       cmd = "set -o pipefail; "
-      cmd += "psql --no-align --tuples-only -F '\t'"
+      cmd += "env PGTZ=utc psql --no-align --tuples-only -F '\t'"
       cmd += " -U %s" % opts[:user]     if opts[:user]
       cmd += " -h %s" % opts[:host]     if opts[:host]
       cmd += " -p %i" % opts[:port]     if opts[:port]
