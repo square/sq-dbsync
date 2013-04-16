@@ -224,6 +224,37 @@ describe SQD::BatchLoadAction do
     let(:source) { test_source(:postgres) }
 
     it_should_behave_like 'a batch load'
-  end
 
+    it 'loads records with time zones' do
+      table_plan = {
+        table_name: :test_table,
+        source_table_name: :test_table,
+        columns: [:id, :col1, :updated_at, :ts_with_tz],
+        source_db: source,
+        indexes: index
+      }
+
+      action = SQD::BatchLoadAction.new(target,
+                                        table_plan,
+                                        registry,
+                                        SQD::Loggers::Null.new,
+                                        ->{ @now })
+
+      create_pg_source_table_with(
+        id:         1,
+        col1:       'hello',
+        pii:        'don alias',
+        created_at: '2012-01-01 01:01:01',
+        updated_at: '2012-01-01 01:01:01',
+        ts_with_tz: '2012-01-01 01:01:01+02',
+      )
+
+      registry.ensure_storage_exists
+
+      action.call
+
+      target[:test_table].count.should == 1
+      target[:test_table].to_a.last[:ts_with_tz].should == Time.utc(2011, 12, 31, 23, 1, 1)
+    end
+  end
 end
