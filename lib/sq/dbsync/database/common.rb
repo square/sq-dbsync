@@ -21,7 +21,15 @@ module Sq::Dbsync::Database
         query = query.filter("#{plan.timestamp} > ?", last_row_at - overlap)
       end
 
-      extract_sql_to_file(query.sql, file_name)
+      sql = query.sql
+
+      sql = customize_sql(sql, db.schema(table_name))
+
+      extract_sql_to_file(sql, file_name)
+    end
+
+    def customize_sql(sql, schema)
+      sql
     end
 
     def hash_schema(table_name)
