@@ -15,6 +15,12 @@ existing solutions were able to do this adequately.
 At some point you will need to bite the bullet and implement a real ETL system,
 but `sq-dbsync` can tide you over until you get there.
 
+dbsync is MySQL `utf8mb4` clean: it will correctly handle four-byte
+UTF8 characters like emojis. Under JRuby, you'll need to have the
+server character set configured to `utf8mb4`. The specs include tests
+for this; they'll fail if you run them under JRuby against MySQL with
+different server character set.
+
 Usage
 -----
 

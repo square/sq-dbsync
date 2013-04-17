@@ -26,6 +26,7 @@ module Sq::Dbsync::Database
       ensure_connection
 
       result = schema(table_name).each do |col, metadata|
+        metadata[:source_db_type] ||= metadata[:db_type]
         metadata[:db_type] = psql_to_mysql_conversion(metadata[:db_type])
       end
 
@@ -57,6 +58,15 @@ module Sq::Dbsync::Database
 
         "boolean" => "char(1)"
       }.fetch(db_type, db_type)
+    end
+
+    def customize_sql(sql, schema)
+      schema.each do |name, metadata|
+        if metadata[:source_db_type].end_with? "with time zone"
+          sql.sub! %r{("#{name}")}, '\1::timestamp'
+        end
+      end
+      sql
     end
 
     def extract_sql_to_file(sql, file_name)
