@@ -60,10 +60,16 @@ module Sq::Dbsync::Database
       }.fetch(db_type, db_type)
     end
 
+
+    # 'with time zone' pg fields have to be selected as
+    # "column-name"::timestamp or they end up with a +XX tz offset on
+    # them, which isn't the correct format for timestamp fields (which
+    # is what they get turned into for portability.)
+
     def customize_sql(sql, schema)
       schema.each do |name, metadata|
         if metadata[:source_db_type].end_with? "with time zone"
-          sql.sub! %r{("#{name}")}, '\1::timestamp'
+          sql.sub! %r{"#{name}"}, '\0::timestamp'
         end
       end
       sql

@@ -15,7 +15,7 @@ module Sq::Dbsync::Database
     def extract_incrementally_to_file(plan, file_name, last_row_at, overlap)
       table_name = plan.source_table_name.to_sym
       db_columns = db.schema(table_name).map(&:first)
-      
+
       query = self[table_name].select(*plan.columns)
       if last_row_at
         query = query.filter("#{plan.timestamp} > ?", last_row_at - overlap)
