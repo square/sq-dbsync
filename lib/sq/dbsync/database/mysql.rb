@@ -141,6 +141,12 @@ module Sq::Dbsync::Database
       cmd += " -h %s"   % opts[:host]     if opts[:host]
       cmd += " -P %i"   % opts[:port]     if opts[:port]
 
+      if opts[:ssl]
+        cmd += " --sslca %s --sslcert %s --sslkey %s" % [
+          opts[:ssl][:ca], opts[:ssl][:cert], opts[:ssl][:key]
+        ]
+      end
+
       cmd += " --default-character-set %s" % opts[:charset] if opts[:charset]
 
       cmd += " %s"      % opts.fetch(:database)
