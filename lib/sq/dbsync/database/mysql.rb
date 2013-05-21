@@ -142,7 +142,7 @@ module Sq::Dbsync::Database
       cmd += " -P %i"   % opts[:port]     if opts[:port]
 
       if opts[:ssl]
-        cmd += " --sslca %s --sslcert %s --sslkey %s" % [
+        cmd += " --ssl-ca %s --ssl-cert %s --ssl-key %s" % [
           opts[:ssl][:ca], opts[:ssl][:cert], opts[:ssl][:key]
         ]
       end
