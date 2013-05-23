@@ -37,7 +37,7 @@ module Sq::Dbsync::Database
 
     attr_reader :db
 
-    def psql_to_mysql_conversion(db_type)
+    def psql_to_mysql_conversion(db_type, default=nil)
       {
         "text" => "varchar(255)",
         "character varying(255)" => "varchar(255)",
@@ -57,7 +57,7 @@ module Sq::Dbsync::Database
         "timestamp with time zone" => "datetime",
 
         "boolean" => "char(1)"
-      }.fetch(db_type, db_type)
+      }.fetch(db_type, default || db_type)
     end
 
 

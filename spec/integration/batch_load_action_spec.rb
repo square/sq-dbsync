@@ -1,5 +1,4 @@
 require 'integration_helper'
-
 require 'sq/dbsync/database/connection'
 require 'sq/dbsync/loggers'
 require 'sq/dbsync/batch_load_action'
