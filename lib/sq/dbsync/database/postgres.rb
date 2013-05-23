@@ -22,12 +22,16 @@ module Sq::Dbsync::Database
       # Unimplemented
     end
 
-    def hash_schema(table_name)
+    def hash_schema(plan)
+      table_name = plan.source_table_name
+      default_conversions = plan.default_conversions || {}
       ensure_connection
 
       result = schema(table_name).each do |col, metadata|
         metadata[:source_db_type] ||= metadata[:db_type]
-        metadata[:db_type] = psql_to_mysql_conversion(metadata[:db_type])
+        metadata[:db_type] = psql_to_mysql_conversion(
+          metadata[:db_type], default_conversions[col.to_s]
+        )
       end
 
       Hash[result]

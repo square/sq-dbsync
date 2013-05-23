@@ -49,7 +49,7 @@ module Sq::Dbsync
 
     def filter_columns
       source         = plan.source_db
-      source_columns = source.hash_schema(plan.source_table_name).keys
+      source_columns = source.hash_schema(plan).keys
       plan.columns   = resolve_columns(plan, source_columns) &
         (target_columns || source_columns)
     end
@@ -58,7 +58,7 @@ module Sq::Dbsync
       # Because we may create the target table later if necessary,
       # we need to check if it *really* exists
       target_columns = if target.table_exists?(plan.table_name)
-        target.hash_schema(plan.table_name).keys
+        target.hash_schema(plan).keys
       else
         nil
       end

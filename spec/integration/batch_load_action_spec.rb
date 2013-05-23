@@ -53,8 +53,9 @@ describe SQD::BatchLoadAction do
       it 'copies all columns to target' do
         action.call
 
-        target.hash_schema(:test_table).keys.should ==
-          source.hash_schema(:test_table).keys
+        plan = OpenStruct.new(table_plan)
+        target.hash_schema(plan).keys.should ==
+          source.hash_schema(plan).keys
       end
     end
 
