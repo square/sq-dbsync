@@ -43,13 +43,14 @@ module Sq::Dbsync::Database
     def hash_schema(plan, prefix=nil)
       table_name = prefix.nil? ? plan.source_table_name :
                                  "#{prefix}#{plan.source_table_name}"
-      default_conversions = plan.default_conversions || {}
+
+      type_casts = plan.type_casts || {}
       ensure_connection
 
       result = schema(table_name).each do |col, metadata|
         metadata[:source_db_type] ||= metadata[:db_type]
-        metadata[:db_type] = psql_to_mysql_conversion(
-          metadata[:db_type], default_conversions[col.to_s]
+        metadata[:db_type] = cast_psql_to_mysql(
+          metadata[:db_type], type_casts[col.to_s]
         )
       end
 
@@ -60,8 +61,8 @@ module Sq::Dbsync::Database
 
     attr_reader :db
 
-    def psql_to_mysql_conversion(db_type, default=nil)
-      CASTS.fetch(db_type, default || db_type)
+    def cast_psql_to_mysql(db_type, cast=nil)
+      CASTS.fetch(db_type, db_type)
     end
 
     # 'with time zone' pg fields have to be selected as
