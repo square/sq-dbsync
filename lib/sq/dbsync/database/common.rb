@@ -96,6 +96,5 @@ module Sq::Dbsync::Database
         Process.waitpid2(pid)[1]
       end
     end
-
   end
 end

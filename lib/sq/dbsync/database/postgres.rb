@@ -70,7 +70,6 @@ module Sq::Dbsync::Database
     # "column-name"::timestamp or they end up with a +XX tz offset on
     # them, which isn't the correct format for timestamp fields (which
     # is what they get turned into for portability.)
-
     def customize_sql(sql, schema)
       schema.each do |name, metadata|
         if metadata[:source_db_type].end_with? "with time zone"
