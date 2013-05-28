@@ -81,7 +81,7 @@ module Sq::Dbsync
       # Because we may create the target table later if necessary,
       # we need to check if it *really* exists
       target_columns = if target.table_exists?(plan.table_name)
-        target.hash_schema(plan).keys
+        target.hash_schema(plan, prefix).keys
       else
         nil
       end

@@ -22,8 +22,9 @@ module Sq::Dbsync::Database
       # Unimplemented
     end
 
-    def hash_schema(plan)
-      table_name = plan.source_table_name
+    def hash_schema(plan, prefix=nil)
+      table_name = prefix.nil? ? plan.source_table_name :
+                                 "#{prefix}#{plan.source_table_name}"
       default_conversions = plan.default_conversions || {}
       ensure_connection
 

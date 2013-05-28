@@ -32,9 +32,11 @@ module Sq::Dbsync::Database
       sql
     end
 
-    def hash_schema(plan)
+    def hash_schema(plan, prefix=nil)
       ensure_connection
-      Hash[schema(plan.source_table_name)]
+      table = prefix.nil? ? plan.source_table_name :
+                            "#{prefix}#{plan.source_table_name}"
+      Hash[schema(table)]
     end
 
     def name
