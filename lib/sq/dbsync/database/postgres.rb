@@ -8,6 +8,24 @@ module Sq::Dbsync::Database
   # Decorator around a Sequel database object, providing some non-standard
   # extensions required for effective extraction from Postgres.
   class Postgres < Delegator
+    CASTS = {
+        "text" => "varchar(255)",
+        "character varying(255)" => "varchar(255)",
+
+        # 255 is an arbitrary choice here. The one example we have
+        # only has data 32 characters long in it.
+        "character varying"      => "varchar(255)",
+
+        # Arbitrarily chosen precision. The default numeric type in mysql is
+        # (10, 0), which is perhaps the most useless default I could imagine.
+        "numeric" => "numeric(12,6)",
+        "boolean" => "char(1)",
+
+        # mysql has no single-column representation for timestamp with time zone
+        "timestamp with time zone" => "datetime",
+        "time without time zone" => "time",
+        "timestamp without time zone" => "datetime",
+      }
 
     include Sq::Dbsync::Database::Common
 
@@ -43,28 +61,8 @@ module Sq::Dbsync::Database
     attr_reader :db
 
     def psql_to_mysql_conversion(db_type, default=nil)
-      {
-        "text" => "varchar(255)",
-        "character varying(255)" => "varchar(255)",
-
-        # 255 is an arbitrary choice here. The one example we have
-        # only has data 32 characters long in it.
-        "character varying"      => "varchar(255)",
-
-        # Arbitrarily chosen precision. The default numeric type in mysql is
-        # (10, 0), which is perhaps the most useless default I could imagine.
-        "numeric" => "numeric(12,6)",
-
-        "time without time zone" => "time",
-        "timestamp without time zone" => "datetime",
-
-        # mysql has no single-column representation for timestamp with time zone
-        "timestamp with time zone" => "datetime",
-
-        "boolean" => "char(1)"
-      }.fetch(db_type, default || db_type)
+      CASTS.fetch(db_type, default || db_type)
     end
-
 
     # 'with time zone' pg fields have to be selected as
     # "column-name"::timestamp or they end up with a +XX tz offset on
