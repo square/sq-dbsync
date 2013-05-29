@@ -40,10 +40,8 @@ module Sq::Dbsync::Database
       # Unimplemented
     end
 
-    def hash_schema(plan, prefix=nil)
-      table_name = prefix.nil? ? plan.source_table_name :
-                                 "#{prefix}#{plan.source_table_name}"
-
+    def hash_schema(plan, prefix="")
+      table_name = "#{prefix.to_s}#{plan.source_table_name}"
       type_casts = plan.type_casts || {}
       ensure_connection
 
