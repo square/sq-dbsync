@@ -60,7 +60,7 @@ module Sq::Dbsync::Database
     attr_reader :db
 
     def cast_psql_to_mysql(db_type, cast=nil)
-      CASTS.fetch(db_type, db_type)
+      CASTS.fetch(db_type, cast || db_type)
     end
 
     # 'with time zone' pg fields have to be selected as
