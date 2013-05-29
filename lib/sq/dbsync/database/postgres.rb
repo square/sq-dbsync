@@ -40,12 +40,11 @@ module Sq::Dbsync::Database
       # Unimplemented
     end
 
-    def hash_schema(plan, prefix="")
-      table_name = "#{prefix.to_s}#{plan.source_table_name}"
+    def hash_schema(plan)
       type_casts = plan.type_casts || {}
       ensure_connection
 
-      result = schema(table_name).each do |col, metadata|
+      result = schema(plan.source_table_name).each do |col, metadata|
         metadata[:source_db_type] ||= metadata[:db_type]
         metadata[:db_type] = cast_psql_to_mysql(
           metadata[:db_type], type_casts[col.to_s]
