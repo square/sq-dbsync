@@ -175,7 +175,7 @@ Documentation
   data types to mysql data types. Primarily intended for custom postgres type
   defintions that have no mysql equivalent. The hash key is the column name,
   and the value is the desired mysql column type. See the
-  `Sq::Dbsync::Database::Postgres::CASTS` constant for the formant of the hash.
+  `Sq::Dbsync::Database::Postgres::CASTS` constant for the format of the hash.
   Example:
 
 ```ruby
