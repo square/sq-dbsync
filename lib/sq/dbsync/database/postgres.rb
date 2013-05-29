@@ -8,6 +8,24 @@ module Sq::Dbsync::Database
   # Decorator around a Sequel database object, providing some non-standard
   # extensions required for effective extraction from Postgres.
   class Postgres < Delegator
+    CASTS = {
+        "text" => "varchar(255)",
+        "character varying(255)" => "varchar(255)",
+
+        # 255 is an arbitrary choice here. The one example we have
+        # only has data 32 characters long in it.
+        "character varying"      => "varchar(255)",
+
+        # Arbitrarily chosen precision. The default numeric type in mysql is
+        # (10, 0), which is perhaps the most useless default I could imagine.
+        "numeric" => "numeric(12,6)",
+        "boolean" => "char(1)",
+
+        # mysql has no single-column representation for timestamp with time zone
+        "timestamp with time zone" => "datetime",
+        "time without time zone" => "time",
+        "timestamp without time zone" => "datetime",
+      }
 
     include Sq::Dbsync::Database::Common
 
@@ -22,12 +40,15 @@ module Sq::Dbsync::Database
       # Unimplemented
     end
 
-    def hash_schema(table_name)
+    def hash_schema(plan)
+      type_casts = plan.type_casts || {}
       ensure_connection
 
-      result = schema(table_name).each do |col, metadata|
+      result = schema(plan.source_table_name).each do |col, metadata|
         metadata[:source_db_type] ||= metadata[:db_type]
-        metadata[:db_type] = psql_to_mysql_conversion(metadata[:db_type])
+        metadata[:db_type] = cast_psql_to_mysql(
+          metadata[:db_type], type_casts[col.to_s]
+        )
       end
 
       Hash[result]
@@ -37,35 +58,14 @@ module Sq::Dbsync::Database
 
     attr_reader :db
 
-    def psql_to_mysql_conversion(db_type)
-      {
-        "text" => "varchar(255)",
-        "character varying(255)" => "varchar(255)",
-
-        # 255 is an arbitrary choice here. The one example we have
-        # only has data 32 characters long in it.
-        "character varying"      => "varchar(255)",
-
-        # Arbitrarily chosen precision. The default numeric type in mysql is
-        # (10, 0), which is perhaps the most useless default I could imagine.
-        "numeric" => "numeric(12,6)",
-
-        "time without time zone" => "time",
-        "timestamp without time zone" => "datetime",
-
-        # mysql has no single-column representation for timestamp with time zone
-        "timestamp with time zone" => "datetime",
-
-        "boolean" => "char(1)"
-      }.fetch(db_type, db_type)
+    def cast_psql_to_mysql(db_type, cast=nil)
+      CASTS.fetch(db_type, cast || db_type)
     end
-
 
     # 'with time zone' pg fields have to be selected as
     # "column-name"::timestamp or they end up with a +XX tz offset on
     # them, which isn't the correct format for timestamp fields (which
     # is what they get turned into for portability.)
-
     def customize_sql(sql, schema)
       schema.each do |name, metadata|
         if metadata[:source_db_type].end_with? "with time zone"

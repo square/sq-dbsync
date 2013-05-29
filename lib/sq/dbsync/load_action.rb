@@ -83,9 +83,9 @@ module Sq::Dbsync
       end
     end
 
-    def add_schema_to_table_plan(x)
-      x.schema ||= x.source_db.hash_schema(x.source_table_name)
-      x
+    def add_schema_to_table_plan(plan)
+      plan.schema ||= plan.source_db.hash_schema(plan)
+      plan
     end
 
     def resolve_columns(plan, source_columns)
