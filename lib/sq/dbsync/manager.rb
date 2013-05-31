@@ -105,7 +105,8 @@ class Sq::Dbsync::Manager
   end
 
   def target
-    @target ||= Sq::Dbsync::Database::Connection.create(config[:target])
+    opts = config[:target]
+    @target ||= Sq::Dbsync::Database::Connection.create(opts, :target)
   end
 
   def tables_to_load
@@ -124,7 +125,7 @@ class Sq::Dbsync::Manager
 
   def sources
     @sources ||= Hash[config[:sources].map do |name, opts|
-      [name, Sq::Dbsync::Database::Connection.create(opts)]
+      [name, Sq::Dbsync::Database::Connection.create(opts, :source)]
     end]
   end
 
@@ -217,7 +218,7 @@ class Sq::Dbsync::Manager
   end
 
   def db
-    @db ||= Database::Connection.create(config[:target])
+    @db ||= Database::Connection.create(config[:target], :target)
   end
 
   def transient_exceptions

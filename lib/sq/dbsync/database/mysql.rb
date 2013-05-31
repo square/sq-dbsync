@@ -18,12 +18,13 @@ module Sq::Dbsync::Database
 
     attr_accessor :charset
 
-    def initialize(db)
-      super
-      @db = db
+    def initialize(db, source_or_target)
+      super(db)
+      @db, @source_or_target = db, source_or_target
     end
 
-    def inspect; "#<Database::Mysql #{opts[:database]}>"; end
+    def inspect; "#<Database::Mysql #{source_or_target} #{opts[:database]}>"
+    end
 
     def load_from_file(table_name, columns, file_name)
       ensure_connection
@@ -131,7 +132,7 @@ module Sq::Dbsync::Database
 
     protected
 
-    attr_reader :db
+    attr_reader :db, :source_or_target
 
     def extract_sql_to_file(sql, file_name)
       file = sql_to_file(connection_settings + sql)

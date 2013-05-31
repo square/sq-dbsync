@@ -18,14 +18,14 @@ end
 
 describe SQD::Database::Postgres do
   let(:source) { test_source(:postgres) }
-  let(:db) { SQD::Database::Postgres.new(source) }
+  let(:db) { SQD::Database::Postgres.new(source, :source) }
 
   it_should_behave_like 'a decorated database adapter'
 end
 
 describe SQD::Database::Mysql do
   let(:source) { test_source(:source) }
-  let(:db)     { SQD::Database::Mysql.new(source) }
+  let(:db)     { SQD::Database::Mysql.new(source, :source) }
 
   it_should_behave_like 'a decorated database adapter'
 

@@ -48,12 +48,14 @@ MB4_TEST_TARGET = db_options(database: 'sq_dbsync_test_target', charset:"utf8mb4
 
 $target = nil
 def test_target
-  $target ||= SQD::Database::Connection.create(TEST_TARGET)
+  $target ||= SQD::Database::Connection.create(TEST_TARGET, :target)
 end
 
 $sources = {}
 def test_source(name)
-  $sources[name] ||= SQD::Database::Connection.create(TEST_SOURCES.fetch(name))
+  $sources[name] ||= SQD::Database::Connection.create(
+    TEST_SOURCES.fetch(name), :source
+  )
 end
 
 RSpec.configure do |config|

@@ -34,7 +34,11 @@ module Sq::Dbsync::Database
 
     def hash_schema(plan)
       ensure_connection
-      Hash[schema(plan.source_table_name)]
+      Hash[schema(source? ? plan.source_table_name : plan.table_name)]
+    end
+
+    def source?
+      source_or_target == :source
     end
 
     def name
