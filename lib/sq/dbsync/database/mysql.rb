@@ -86,21 +86,6 @@ module Sq::Dbsync::Database
         count
     end
 
-    # Overriden because the Sequel implementation does not work with partial
-    # permissions on a table. See:
-    # https://github.com/jeremyevans/sequel/issues/422
-    def table_exists?(table_name)
-      begin
-        !!db.schema(table_name, reload: true)
-      rescue Sequel::DatabaseError
-        false
-      end
-    end
-
-    def drop_table(table_name)
-      db.drop_table(table_name)
-    end
-
     def switch_table(to_replace, new_table)
       ensure_connection
 
