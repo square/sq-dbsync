@@ -13,18 +13,17 @@ module Sq::Dbsync::Database
   # Decorator around a Sequel database object, providing some non-standard
   # extensions required for effective ETL with MySQL.
   class Mysql < Delegator
+    # 2 days is chosen as an arbitrary buffer
+    AUX_TIME_BUFFER = 60 * 60 * 24 * 2 # 2 days
+    LOAD_SQL = "LOAD DATA INFILE '%s' %s INTO TABLE %s %s (%s)"
 
     include Common
 
     def load_from_file(table_name, columns, file_name)
       ensure_connection
-      sql = "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s %s (%s)" % [
-        file_name,
-        table_name,
-        character_set,
-        escape_columns(columns)
-      ]
-      db.run sql
+      db.run(LOAD_SQL % [
+        file_name, 'IGNORE', table_name, character_set, escape_columns(columns)
+      ])
     end
 
     def set_lock_timeout(seconds)
@@ -36,12 +35,9 @@ module Sq::Dbsync::Database
       # Very low lock wait timeout, since we don't want loads to be blocked
       # waiting for long queries.
       set_lock_timeout(10)
-      db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s %s (%s)" % [
-        file_name,
-        table_name,
-        character_set,
-        escape_columns(columns)
-      ]
+      db.run(LOAD_SQL % [
+        file_name, 'REPLACE', table_name, character_set, escape_columns(columns)
+      ])
     rescue Sequel::DatabaseError => e
       transient_regex =
         /Lock wait timeout exceeded|Deadlock found when trying to get lock/
@@ -52,9 +48,6 @@ module Sq::Dbsync::Database
         raise
       end
     end
-
-    # 2 days is chosen as an arbitrary buffer
-    AUX_TIME_BUFFER = 60 * 60 * 24 * 2 # 2 days
 
     # Deletes recent rows based on timestamp, but also allows filtering by an
     # auxilary timestamp column for the case where the primary one is not
