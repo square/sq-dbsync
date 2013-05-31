@@ -13,28 +13,17 @@ module Sq::Dbsync::Database
   # Decorator around a Sequel database object, providing some non-standard
   # extensions required for effective ETL with MySQL.
   class Mysql < Delegator
+    # 2 days is chosen as an arbitrary buffer
+    AUX_TIME_BUFFER = 60 * 60 * 24 * 2 # 2 days
+    LOAD_SQL = "LOAD DATA INFILE '%s' %s INTO TABLE %s %s (%s)"
 
     include Common
 
-    attr_accessor :charset
-
-    def initialize(db)
-      super
-      @db = db
-    end
-
-    def inspect; "#<Database::Mysql #{opts[:database]}>"; end
-
     def load_from_file(table_name, columns, file_name)
       ensure_connection
-      character_set = self.charset ? " character set #{self.charset}" : ""
-      sql = "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s %s (%s)" % [
-        file_name,
-        table_name,
-        character_set,
-        escape_columns(columns)
-      ]
-      db.run sql
+      db.run(LOAD_SQL % [
+        file_name, 'IGNORE', table_name, character_set, escape_columns(columns)
+      ])
     end
 
     def set_lock_timeout(seconds)
@@ -46,13 +35,9 @@ module Sq::Dbsync::Database
       # Very low lock wait timeout, since we don't want loads to be blocked
       # waiting for long queries.
       set_lock_timeout(10)
-      character_set = self.charset ? " character set #{self.charset}" : ""
-      db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s %s (%s)" % [
-        file_name,
-        table_name,
-        character_set,
-        escape_columns(columns)
-      ]
+      db.run(LOAD_SQL % [
+        file_name, 'REPLACE', table_name, character_set, escape_columns(columns)
+      ])
     rescue Sequel::DatabaseError => e
       transient_regex =
         /Lock wait timeout exceeded|Deadlock found when trying to get lock/
@@ -63,9 +48,6 @@ module Sq::Dbsync::Database
         raise
       end
     end
-
-    # 2 days is chosen as an arbitrary buffer
-    AUX_TIME_BUFFER = 60 * 60 * 24 * 2 # 2 days
 
     # Deletes recent rows based on timestamp, but also allows filtering by an
     # auxilary timestamp column for the case where the primary one is not
@@ -93,21 +75,6 @@ module Sq::Dbsync::Database
         count
     end
 
-    # Overriden because the Sequel implementation does not work with partial
-    # permissions on a table. See:
-    # https://github.com/jeremyevans/sequel/issues/422
-    def table_exists?(table_name)
-      begin
-        !!db.schema(table_name, reload: true)
-      rescue Sequel::DatabaseError
-        false
-      end
-    end
-
-    def drop_table(table_name)
-      db.drop_table(table_name)
-    end
-
     def switch_table(to_replace, new_table)
       ensure_connection
 
@@ -131,8 +98,6 @@ module Sq::Dbsync::Database
 
     protected
 
-    attr_reader :db
-
     def extract_sql_to_file(sql, file_name)
       file = sql_to_file(connection_settings + sql)
       cmd = "set -o pipefail; mysql --skip-column-names"
@@ -147,7 +112,7 @@ module Sq::Dbsync::Database
         ]
       end
 
-      cmd += " --default-character-set %s" % opts[:charset] if opts[:charset]
+      cmd += " --default-character-set %s" % charset if charset
 
       cmd += " %s"      % opts.fetch(:database)
 
@@ -170,9 +135,10 @@ module Sq::Dbsync::Database
       lock_timeout_sql(10)
     end
 
+    def character_set; charset ? " character set #{charset}" : "" end
+
     def lock_timeout_sql(seconds)
       "SET SESSION innodb_lock_wait_timeout = %i;" % seconds
     end
-
   end
 end

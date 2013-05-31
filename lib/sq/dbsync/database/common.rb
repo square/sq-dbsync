@@ -5,6 +5,17 @@ module Sq::Dbsync::Database
 
     SQD = ::Sq::Dbsync
 
+    def initialize(opts, source_or_target)
+      db = Sequel.connect(opts)
+      super(db)
+      @db, @source_or_target = db, source_or_target
+      @charset = opts[:charset] if opts[:charset]
+    end
+
+    def inspect
+      "#<Database::#{self.class.name} #{source_or_target} #{opts[:database]}>"
+    end
+
     def extract_to_file(table_name, columns, file_name)
       extract_sql_to_file("SELECT %s FROM %s" % [
         columns.join(', '),
@@ -34,7 +45,11 @@ module Sq::Dbsync::Database
 
     def hash_schema(plan)
       ensure_connection
-      Hash[schema(plan.source_table_name)]
+      Hash[schema(source? ? plan.source_table_name : plan.table_name)]
+    end
+
+    def source?
+      source_or_target == :source
     end
 
     def name
@@ -58,6 +73,8 @@ module Sq::Dbsync::Database
     end
 
     protected
+
+    attr_reader :db, :source_or_target, :charset
 
     def execute!(cmd)
       # psql doesn't return a non-zero error code when executing commands from

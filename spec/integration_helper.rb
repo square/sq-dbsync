@@ -48,18 +48,18 @@ def create_pg_source_table_with(*rows)
   end
 end
 
-def setup_target_table(last_synced_at)
-  target.create_table! :test_table do
+def setup_target_table(last_synced_at, name=:test_table)
+  target.create_table! name do
     Integer  :id
     String   :col1
     DateTime :updated_at
     DateTime :created_at
   end
 
-  target.add_index :test_table, :id, :unique => true
+  target.add_index name, :id, :unique => true
 
   registry.ensure_storage_exists
-  registry.set(:test_table,
+  registry.set(name,
     last_synced_at:       last_synced_at,
     last_row_at:          last_synced_at,
     last_batch_synced_at: last_synced_at

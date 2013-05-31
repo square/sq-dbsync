@@ -9,14 +9,12 @@ module Sq::Dbsync::Database
   # Factory class to abstract selection of a decorator to faciliate databases
   # other than MySQL.
   class Connection
-    def self.create(opts)
+    def self.create(opts, direction)
       case opts[:brand]
       when 'mysql'
-        db = Sq::Dbsync::Database::Mysql.new(Sequel.connect(opts))
-        db.charset = opts[:charset] if opts[:charset]
-        db
+        Sq::Dbsync::Database::Mysql.new(opts, direction)
       when 'postgresql'
-        Sq::Dbsync::Database::Postgres.new(Sequel.connect(opts))
+        Sq::Dbsync::Database::Postgres.new(opts, direction)
       else
         raise "Unsupported database: #{opts.inspect}"
       end
