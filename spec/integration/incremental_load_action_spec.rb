@@ -11,8 +11,9 @@ describe SQD::IncrementalLoadAction do
   let(:last_synced_at) { now - 10 }
   let(:source)         { test_source(:source) }
   let(:target) { test_target }
+  let(:target_table_name) { :test_table }
   let(:table_plan) {{
-    table_name: :test_table,
+    table_name: target_table_name,
     source_table_name: :test_table,
     columns: [:id, :col1, :updated_at],
     source_db: source,
@@ -60,6 +61,18 @@ describe SQD::IncrementalLoadAction do
       end
     end
 
+    describe 'when source and target are differently named' do
+      let(:target_table_name) { :target_test_table }
+
+      it 'copies all columns to the correctly named target' do
+        setup_target_table(last_synced_at, target_table_name)
+
+        action.call
+
+        target[target_table_name].map { |row| row.values_at(:id, :col1) }.
+          should == [[2, 'new record']]
+      end
+    end
 
     it 'copies null data to the target' do
       source[:test_table].update(col1: nil)

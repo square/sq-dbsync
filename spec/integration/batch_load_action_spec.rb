@@ -11,8 +11,9 @@ describe SQD::BatchLoadAction do
   let!(:now)    { @now = Time.now.utc }
   let(:last_synced_at) { now - 10 }
   let(:target) { test_target }
+  let(:target_table_name) { :test_table }
   let(:table_plan) {{
-    table_name: :test_table,
+    table_name: target_table_name,
     source_table_name: :test_table,
     columns: [:id, :col1, :updated_at],
     source_db: source,
@@ -20,7 +21,7 @@ describe SQD::BatchLoadAction do
   }}
   let(:index) {{
     index_on_col1: { columns: [:col1], unique: false }
-  } }
+  }}
   let(:registry) { SQD::TableRegistry.new(target) }
   let(:action) { SQD::BatchLoadAction.new(
     target,
@@ -59,14 +60,18 @@ describe SQD::BatchLoadAction do
       end
     end
 
-    it 'copies source tables to target with matching schemas' do
-      start_time = now.to_f
+    describe 'when the source and destination table names differ' do
+      let(:target_table_name) { :target_test_table }
 
-      action.call
+      it 'copies source tables to target with matching schemas' do
+        start_time = now.to_f
 
-      verify_schema
-      verify_data
-      verify_metadata(start_time)
+        action.call
+
+        verify_schema
+        verify_data
+        verify_metadata(start_time)
+      end
     end
 
     it 'handles column that does not exist in source' do
@@ -139,13 +144,12 @@ describe SQD::BatchLoadAction do
 
     def test_tables
       {
-        test_table: source,
+        test_table: [source, :target_test_table],
       }
     end
 
     def verify_schema
-      test_tables.each do |table_name, source_db|
-        target_table_name = table_name
+      test_tables.each do |table_name, (source_db, target_table_name)|
         target.tables.should include(target_table_name)
         source_test_table_schema =
           source_db.schema(table_name).map do |column, hash|
@@ -177,8 +181,8 @@ describe SQD::BatchLoadAction do
     end
 
     def verify_data
-      test_tables.each do |table_name, _|
-        data = target[table_name].all
+      test_tables.each do |table_name, (source_db, target_table_name)|
+        data = target[target_table_name].all
         data.count.should == 1
         data = data[0]
         data.keys.length.should == 3
@@ -189,8 +193,8 @@ describe SQD::BatchLoadAction do
     end
 
     def verify_metadata(start_time)
-      test_tables.each do |table_name, _|
-        meta = registry.get(table_name)
+      test_tables.each do |table_name, (source_db, target_table_name)|
+        meta = registry.get(target_table_name)
         meta[:last_synced_at].should_not be_nil
         meta[:last_batch_synced_at].should_not be_nil
         meta[:last_batch_synced_at].to_i.should == start_time.to_i
