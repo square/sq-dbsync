@@ -18,14 +18,6 @@ module Sq::Dbsync::Database
 
     attr_accessor :charset
 
-    def initialize(db, source_or_target)
-      super(db)
-      @db, @source_or_target = db, source_or_target
-    end
-
-    def inspect; "#<Database::Mysql #{source_or_target} #{opts[:database]}>"
-    end
-
     def load_from_file(table_name, columns, file_name)
       ensure_connection
       character_set = self.charset ? " character set #{self.charset}" : ""
@@ -132,8 +124,6 @@ module Sq::Dbsync::Database
 
     protected
 
-    attr_reader :db, :source_or_target
-
     def extract_sql_to_file(sql, file_name)
       file = sql_to_file(connection_settings + sql)
       cmd = "set -o pipefail; mysql --skip-column-names"
@@ -174,6 +164,5 @@ module Sq::Dbsync::Database
     def lock_timeout_sql(seconds)
       "SET SESSION innodb_lock_wait_timeout = %i;" % seconds
     end
-
   end
 end

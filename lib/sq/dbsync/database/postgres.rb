@@ -29,14 +29,6 @@ module Sq::Dbsync::Database
 
     include Sq::Dbsync::Database::Common
 
-    def initialize(db, source_or_target)
-      super(db)
-      @db, @source_or_target = db, source_or_target
-    end
-
-    def inspect; "#<Database::Postgres #{source_or_target} #{opts[:database]}>"
-    end
-
     def set_lock_timeout(seconds)
       # Unimplemented
     end
@@ -57,8 +49,6 @@ module Sq::Dbsync::Database
     end
 
     protected
-
-    attr_reader :db, :source_or_target
 
     def cast_psql_to_mysql(db_type, cast=nil)
       CASTS.fetch(db_type, cast || db_type)
