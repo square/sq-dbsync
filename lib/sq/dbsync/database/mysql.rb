@@ -16,11 +16,8 @@ module Sq::Dbsync::Database
 
     include Common
 
-    attr_accessor :charset
-
     def load_from_file(table_name, columns, file_name)
       ensure_connection
-      character_set = self.charset ? " character set #{self.charset}" : ""
       sql = "LOAD DATA INFILE '%s' IGNORE INTO TABLE %s %s (%s)" % [
         file_name,
         table_name,
@@ -39,7 +36,6 @@ module Sq::Dbsync::Database
       # Very low lock wait timeout, since we don't want loads to be blocked
       # waiting for long queries.
       set_lock_timeout(10)
-      character_set = self.charset ? " character set #{self.charset}" : ""
       db.run "LOAD DATA INFILE '%s' REPLACE INTO TABLE %s %s (%s)" % [
         file_name,
         table_name,
@@ -123,7 +119,7 @@ module Sq::Dbsync::Database
         ]
       end
 
-      cmd += " --default-character-set %s" % opts[:charset] if opts[:charset]
+      cmd += " --default-character-set %s" % charset if charset
 
       cmd += " %s"      % opts.fetch(:database)
 
@@ -145,6 +141,8 @@ module Sq::Dbsync::Database
     def connection_settings
       lock_timeout_sql(10)
     end
+
+    def character_set; charset ? " character set #{charset}" : "" end
 
     def lock_timeout_sql(seconds)
       "SET SESSION innodb_lock_wait_timeout = %i;" % seconds

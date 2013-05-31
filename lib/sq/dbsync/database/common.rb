@@ -5,9 +5,11 @@ module Sq::Dbsync::Database
 
     SQD = ::Sq::Dbsync
 
-    def initialize(db, source_or_target)
+    def initialize(opts, source_or_target)
+      db = Sequel.connect(opts)
       super(db)
       @db, @source_or_target = db, source_or_target
+      @charset = opts[:charset] if opts[:charset]
     end
 
     def inspect
@@ -72,7 +74,7 @@ module Sq::Dbsync::Database
 
     protected
 
-    attr_reader :db, :source_or_target
+    attr_reader :db, :source_or_target, :charset
 
     def execute!(cmd)
       # psql doesn't return a non-zero error code when executing commands from
