@@ -171,20 +171,6 @@ Documentation
 * `timestamp` The column to treat as a timestamp. Must be a member of the
   `:columns` option. (default: select `updated_at` or `created_at`, in that
   order)
-* `type_casts` a hash for specifying column-level type casting from postgres
-  data types to mysql data types. Primarily intended for custom postgres type
-  defintions that have no mysql equivalent. The hash key is the column name,
-  and the value is the desired mysql column type. See the
-  `Sq::Dbsync::Database::Postgres::CASTS` constant for the format of the hash.
-  Example:
-
-```ruby
-{
-  :table_name => :some_table,
-  :columns => [ :custom_postgres_type ],
-  :type_casts => { :custom_postgres_type => "varchar(255)" }
-}
-```
 
 ### Handling Deletes
 
