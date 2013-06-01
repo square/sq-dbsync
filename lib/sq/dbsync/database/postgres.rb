@@ -40,9 +40,7 @@ module Sq::Dbsync::Database
       table_name = source? ? plan.source_table_name : plan.table_name
       result = schema(table_name).each do |col, metadata|
         metadata[:source_db_type] ||= metadata[:db_type]
-        metadata[:db_type] = cast_psql_to_mysql(
-          metadata[:db_type], type_casts[col.to_s]
-        )
+        metadata[:db_type] = cast_psql_to_mysql(metadata[:db_type])
       end
 
       Hash[result]
@@ -50,8 +48,8 @@ module Sq::Dbsync::Database
 
     protected
 
-    def cast_psql_to_mysql(db_type, cast=nil)
-      CASTS.fetch(db_type, cast || db_type)
+    def cast_psql_to_mysql(db_type)
+      CASTS.fetch(db_type, db_type)
     end
 
     # 'with time zone' pg fields have to be selected as
