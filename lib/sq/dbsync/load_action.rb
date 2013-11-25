@@ -66,15 +66,31 @@ module Sq::Dbsync
     attr_reader :target, :plan, :registry, :logger, :now
 
     def prepare
+      return false unless source_table_exists?
+      return false unless timestamp_column_exists?
+
+      add_schema_to_table_plan(plan)
+      plan.prefixed_table_name = (prefix + plan.table_name.to_s).to_sym
+      filter_columns
+      plan
+    end
+
+    def timestamp_column_exists?
+      columns = resolve_columns(plan, source_columns)
+      plan.timestamp ||= ([:updated_at, :created_at] & columns)[0]
+      unless plan.timestamp
+        logger.log("%s has no timestamp columns" % plan.source_table_name)
+        return false
+      end
+      true
+    end
+
+    def source_table_exists?
       unless plan.source_db.table_exists?(plan.source_table_name)
         logger.log("%s does not exist" % plan.source_table_name)
         return false
       end
-      add_schema_to_table_plan(plan)
-      plan.prefixed_table_name = (prefix + plan.table_name.to_s).to_sym
-      filter_columns
-      plan.timestamp ||=
-        ([:updated_at, :created_at] & plan.columns)[0]
+      true
     end
 
     def ensure_target_exists
