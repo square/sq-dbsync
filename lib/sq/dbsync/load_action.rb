@@ -96,6 +96,10 @@ module Sq::Dbsync
       end
     end
 
+    def source_columns
+      plan.source_db.hash_schema(plan).keys
+    end
+
     def extract_to_file(since)
       plan.source_db.ensure_connection
       plan.source_db.set_lock_timeout(10)

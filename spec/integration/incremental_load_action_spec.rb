@@ -138,7 +138,6 @@ describe SQD::IncrementalLoadAction do
         should == [['new record']]
     end
 
-
     describe 'with custom timestamp' do
       let(:table_plan) {{
         table_name: :test_table,
