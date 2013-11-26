@@ -52,8 +52,6 @@ module Sq::Dbsync
     private
 
     def filter_columns
-      source = plan.source_db
-      source_columns = source.hash_schema(plan).keys
       plan.columns = resolve_columns(plan, source_columns)
     end
 
