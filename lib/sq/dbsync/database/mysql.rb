@@ -102,7 +102,7 @@ module Sq::Dbsync::Database
       file = sql_to_file(connection_settings + sql)
       cmd = "set -o pipefail; mysql --skip-column-names"
       cmd += " -u %s"   % opts[:user]     if opts[:user]
-      cmd += " -p%s"    % opts[:password] if opts[:password]
+      cmd += " -p'%s'"  % opts[:password] if opts[:password]
       cmd += " -h %s"   % opts[:host]     if opts[:host]
       cmd += " -P %i"   % opts[:port]     if opts[:port]
 
