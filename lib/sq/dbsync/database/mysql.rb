@@ -84,6 +84,7 @@ module Sq::Dbsync::Database
       drops   = []
 
       if table_exists?(to_replace)
+        drop_table('old_' + to_replace) if table_exists?('old_' + to_replace)
         renames << [to_replace, 'old_' + to_replace]
         drops << 'old_' + to_replace
       end

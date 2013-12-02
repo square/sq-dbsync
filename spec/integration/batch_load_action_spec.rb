@@ -89,9 +89,7 @@ describe SQD::BatchLoadAction do
     it 'handles table that does not exist in source' do
       source.drop_table :test_table
 
-      action.call
-
-      target.table_exists?(:test_table).should_not be
+      expect { action.call }.to raise_error(Sq::Dbsync::LoadError)
     end
 
     it 'ignores duplicates when loading data' do
