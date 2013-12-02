@@ -12,6 +12,8 @@ require 'sq/dbsync/error_handler'
 #
 # This is the main entry point for the application.
 class Sq::Dbsync::Manager
+  class UnknownTablesError < RuntimeError; end
+
   include Sq::Dbsync
 
   EPOCH = Date.new(2000, 1, 1).to_time
@@ -134,6 +136,14 @@ class Sq::Dbsync::Manager
   private
 
   def run_load(action, context, tables = :all)
+    if tables != :all
+      table_names = tables_to_load.map { |p| p[:table_name] }
+      unknown_tables = Set.new tables - table_names
+      if unknown_tables.size > 0
+        raise(UnknownTablesError, "Unknown tables: #{unknown_tables.to_a}")
+      end
+    end
+
     items = tables_to_load.map do |tplan|
       if tables != :all
         next unless tables.include?(tplan[:table_name])

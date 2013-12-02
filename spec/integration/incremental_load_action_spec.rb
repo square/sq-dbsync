@@ -114,7 +114,7 @@ describe SQD::IncrementalLoadAction do
     it 'should handle table that does not exist in source but does in target' do
       source.drop_table :test_table
 
-      action.call
+      expect { action.call }.to raise_error(Sq::Dbsync::LoadError)
 
       registry.get(:test_table).should_not be_nil
       target.table_exists?(:test_table).should be
@@ -170,10 +170,10 @@ describe SQD::IncrementalLoadAction do
         source.drop_table :test_table
         table_plan[:always_sync] = true
 
-        action.call
+        expect { action.call }.to raise_error(Sq::Dbsync::LoadError)
 
-        registry.get(:test_table).should be_nil
-        target.table_exists?(:test_table).should_not be
+        registry.get(:test_table).should_not be_nil
+        target.table_exists?(:test_table).should be
       end
 
       it 'handles table that does not exist in target with always_sync' do

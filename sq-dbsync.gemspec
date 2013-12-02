@@ -3,7 +3,7 @@ require File.expand_path('../lib/sq/dbsync/version', __FILE__)
 
 Gem::Specification.new do |gem|
   gem.authors       = ["Xavier Shay", "Damon McCormick"]
-  gem.email         = ["xavier@squareup.com", "damon@squaerup.com"]
+  gem.email         = ["xavier@squareup.com", "damon@squareup.com"]
   gem.description   =
     %q{Column based, timestamp replication of MySQL and Postgres databases.}
   gem.summary       = %q{

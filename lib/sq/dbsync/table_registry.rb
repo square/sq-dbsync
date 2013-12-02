@@ -60,13 +60,13 @@ module Sq::Dbsync
       end
     end
 
-    private
-
-    attr_reader :table, :db
-
     def table_name
       :meta_last_sync_times
     end
+
+    private
+
+    attr_reader :table, :db
 
     def exists?(key)
       table.filter(table_name: key.to_s).count > 0

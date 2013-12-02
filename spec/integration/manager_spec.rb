@@ -79,7 +79,7 @@ describe SQD::Manager do
     manager = SQD::Manager.new(config, [
       [SQD:: StaticTablePlan.new(plan), :source],
     ])
-    manager.batch_nonactive([:bogus])
+    expect { manager.batch_nonactive([:bogus]) }.to raise_error(Sq::Dbsync::Manager::UnknownTablesError)
     target.table_exists?(:test_table).should_not be
 
     manager.batch_nonactive([:test_table])
@@ -94,7 +94,7 @@ describe SQD::Manager do
       [SQD::StaticTablePlan.new(plan), :source],
     ])
 
-    manager.batch_nonactive([:bogus])
+    expect { manager.batch_nonactive([:bogus]) }.to raise_error(Sq::Dbsync::Manager::UnknownTablesError)
     target.table_exists?(:test_table).should be
   end
 
@@ -102,7 +102,7 @@ describe SQD::Manager do
     setup_target_table(now)
 
     manager = SQD::Manager.new(config, [])
-    manager.batch_nonactive([:bogus])
+    expect { manager.batch_nonactive([:bogus]) }.to raise_error(Sq::Dbsync::Manager::UnknownTablesError)
 
     target.table_exists?(:test_table).should be
   end

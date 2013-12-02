@@ -5,6 +5,8 @@ require 'sq/dbsync/schema_maker'
 require 'sq/dbsync/tempfile_factory'
 
 module Sq::Dbsync
+  class LoadError < RuntimeError; end
+
   # An stateful action object representing the transfer of data from a source
   # table to a target. The action can be performed in full using `#call`, but
   # control can also be inverted using the `.stages` method, which allows the
@@ -66,31 +68,22 @@ module Sq::Dbsync
     attr_reader :target, :plan, :registry, :logger, :now
 
     def prepare
-      return false unless source_table_exists?
-      return false unless timestamp_column_exists?
+      plan.source_db.ensure_connection
+
+      unless plan.source_db.table_exists?(plan.source_table_name)
+        raise(LoadError, "#{plan.source_table_name} does not exist")
+      end
+
+      columns = resolve_columns(plan, source_columns)
+      plan.timestamp ||= ([:updated_at, :created_at] & columns)[0]
+      unless plan.timestamp
+        raise(LoadError, "#{plan.source_table_name} has no timestamp column")
+      end
 
       add_schema_to_table_plan(plan)
       plan.prefixed_table_name = (prefix + plan.table_name.to_s).to_sym
       filter_columns
       plan
-    end
-
-    def timestamp_column_exists?
-      columns = resolve_columns(plan, source_columns)
-      plan.timestamp ||= ([:updated_at, :created_at] & columns)[0]
-      unless plan.timestamp
-        logger.log("%s has no timestamp columns" % plan.source_table_name)
-        return false
-      end
-      true
-    end
-
-    def source_table_exists?
-      unless plan.source_db.table_exists?(plan.source_table_name)
-        logger.log("%s does not exist" % plan.source_table_name)
-        return false
-      end
-      true
     end
 
     def ensure_target_exists

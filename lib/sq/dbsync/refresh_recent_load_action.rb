@@ -23,6 +23,10 @@ module Sq::Dbsync
 
     def extract_data
       @metadata   = registry.get(plan.table_name)
+      if @metadata == nil
+        raise "Could not find entry for #{plan.table_name} in #{registry.table_name.to_s}"
+      end
+
       @start_time = now.call
       @since      = (
         @metadata[:last_row_at] ||
