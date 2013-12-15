@@ -1,6 +1,8 @@
 require 'tempfile'
 
 module Sq::Dbsync
+  class SplitError < RuntimeError; end
+
   # Provide extra functionality on top of the standard tempfile API.
   class TempfileFactory
 
@@ -28,7 +30,9 @@ module Sq::Dbsync
     end
 
     def self.split(file, n, logger, &block)
-      `split -l #{n} #{file.path} #{file.path}.`
+      unless system("split", "-l", "#{n}", "#{file.path}", "#{file.path}.")
+        raise(SplitError, "Error trying to split #{file.path}")
+      end
       files = Dir[file.path + '.*']
       files.each_with_index do |tempfile, i|
         logger.log("Loading chunk #{i+1}/#{files.length}")
