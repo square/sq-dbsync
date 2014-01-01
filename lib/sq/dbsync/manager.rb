@@ -82,7 +82,7 @@ class Sq::Dbsync::Manager
       db.disconnect
     end
 
-    raise_if_pipeline_failure(
+    raise_all_if_pipeline_failure(
       # ThreadedContext would be ideal here, but it leaks memory in JRuby. Not
       # sure why yet, but mass creation of threads seems like an obvious
       # candidate for brokenness.
@@ -186,14 +186,6 @@ class Sq::Dbsync::Manager
       rescue *transient_exceptions
         consecutive_fails += 1
         raise if consecutive_fails >= MAX_RETRIES
-      end
-    end
-  end
-
-  def raise_if_pipeline_failure(results)
-    results.each do |result|
-      if result.is_a?(Pipeline::Failure)
-        raise result.wrapped_exception
       end
     end
   end
