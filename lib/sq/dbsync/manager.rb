@@ -65,12 +65,11 @@ class Sq::Dbsync::Manager
     loop_with_retry_on(->{ @running }, transient_exceptions) do
       incremental_once
 
-      counter = (counter + 1) % 100
-      if counter == 1
+      if (counter += 1) % 100 == 1
         # No need to do this every cycle, 100 is chosen to be as good as any
         # other number. It should run on the very first cycle however so that
         # the specs will cover it.
-        increment_checkpoint
+        purge_registry
       end
     end
   end
@@ -91,15 +90,6 @@ class Sq::Dbsync::Manager
       # fixes.
       run_load(incremental_action, Pipeline::SimpleContext)
     )
-  end
-
-  # Actions that need to be performed regularly, but not every cycle. Please do
-  # suggest a better name for this method.
-  def increment_checkpoint
-    # No need to do this every cycle, 100 is chosen to be as good as any
-    # other number. It should run on the very first cycle however so that
-    # our specs will cover it.
-    purge_registry
   end
 
   def stop!

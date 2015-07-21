@@ -66,7 +66,14 @@ describe SQD::Manager do
     setup_target_table(now)
 
     manager = SQD::Manager.new(config, [])
-    manager.increment_checkpoint
+
+    # `#incremental` runs forever. Stop it after a while and check the
+    # side-effect.
+    Thread.new do
+      sleep 0.2
+      manager.stop!
+    end
+    manager.incremental
     registry.get(:test_table).should_not be
 
     # Dropping tables must be done manually
